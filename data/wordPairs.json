@@ -1,0 +1,14 @@
+{
+  "pairs": [
+    {
+      "id": "food-001",
+      "civilian": "Lime",
+      "mafia": "Lemon"
+    },
+    {
+      "id": "drink-001",
+      "civilian": "Coffee",
+      "mafia": "Tea"
+    }
+  ]
+}
