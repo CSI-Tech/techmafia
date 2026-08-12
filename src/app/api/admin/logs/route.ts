@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GameLog } from '@/lib/db/models/GameLog';
+import { getLogs } from '@/lib/db/dbHelper';
 
 export async function GET(request: Request) {
   try {
@@ -8,14 +8,32 @@ export async function GET(request: Request) {
     const roomCode = searchParams.get('roomCode');
     const event = searchParams.get('event');
     const round = searchParams.get('round');
+    const stage = searchParams.get('stage');
+    const player = searchParams.get('player');
+    const date = searchParams.get('date');
 
-    const filter: Record<string, unknown> = {};
-    if (teamId) filter.teamId = teamId;
-    if (roomCode) filter.roomCode = roomCode;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const filter: Record<string, any> = {};
+    if (teamId) filter.teamId = { $regex: teamId, $options: 'i' };
+    if (roomCode) filter.roomCode = { $regex: roomCode, $options: 'i' };
     if (event) filter.event = { $regex: event, $options: 'i' };
     if (round) filter.round = Number(round);
+    if (stage) filter.event = { $regex: stage, $options: 'i' };
+    if (player) {
+      filter.$or = [
+        { event: { $regex: player, $options: 'i' } },
+        { detail: { $regex: player, $options: 'i' } }
+      ];
+    }
+    if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      filter.timestamp = { $gte: startOfDay, $lte: endOfDay };
+    }
 
-    const logs = await GameLog.find(filter).sort({ timestamp: -1 }).limit(500).lean();
+    const logs = await getLogs(filter);
     return NextResponse.json({ success: true, logs });
   } catch (err) {
     return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });

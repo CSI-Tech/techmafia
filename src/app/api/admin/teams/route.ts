@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { GameRoom } from '@/lib/db/models/GameRoom';
+import { getRooms } from '@/lib/db/dbHelper';
 import { gameManager } from '@/lib/game/GameManager';
 
 export async function GET() {
   try {
-    const rooms = await GameRoom.find().sort({ createdAt: -1 }).lean();
+    const rooms = await getRooms();
 
     const teamsWithLive = rooms.map((room) => {
       const live = gameManager.getTeam(room.teamId);
@@ -22,6 +22,8 @@ export async function GET() {
                 name: p.name,
                 role: p.role,
                 status: p.status,
+                eliminatedRound: p.eliminatedRound,
+                eliminatedCause: p.eliminatedCause,
               })),
             }
           : null,

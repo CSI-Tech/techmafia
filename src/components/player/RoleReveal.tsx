@@ -39,14 +39,7 @@ export function RoleReveal() {
             }`}>
               {role}
             </div>
-            {gameState.myWord && (
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Your Secret Word Was</p>
-                <p className={`text-2xl font-extrabold ${
-                  isMafia ? 'text-red-300' : isInvestigator ? 'text-amber-300' : 'text-blue-300'
-                }`}>{gameState.myWord}</p>
-              </div>
-            )}
+
           </div>
           <p className="text-gray-500 text-sm text-center">
             Roles for other players will be revealed when the game ends.
@@ -59,8 +52,6 @@ export function RoleReveal() {
   // Colour theme per role
   const cardBg = isMafia ? 'bg-red-50 border-red-200' : isInvestigator ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200';
   const badgeBg = isMafia ? 'bg-primary text-white' : isInvestigator ? 'bg-amber-600 text-white' : 'bg-blue-600 text-white';
-  const wordBg = isMafia ? 'bg-primary/10' : isInvestigator ? 'bg-amber-100' : 'bg-blue-100';
-  const wordText = isMafia ? 'text-primary' : isInvestigator ? 'text-amber-700' : 'text-blue-700';
   const accentColor = isMafia ? 'text-primary' : isInvestigator ? 'text-amber-600' : 'text-blue-600';
 
   return (
@@ -106,18 +97,7 @@ export function RoleReveal() {
                 {role ?? 'UNKNOWN'}
               </div>
 
-              {/* Word */}
-              {gameState.myWord && (
-                <div className="text-center">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Your Secret Word</p>
-                  <div className={`px-8 py-4 rounded-2xl ${wordBg}`}>
-                    <span className={`text-3xl font-extrabold tracking-wider ${wordText}`}>
-                      {gameState.myWord}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2 font-medium">Describe this without saying it directly</p>
-                </div>
-              )}
+
 
               {/* Mafia partner */}
               {isMafia && gameState.myMafiaPartner && (
@@ -166,7 +146,7 @@ export function RoleReveal() {
             : 'Tap the card above to view your role.'}
         </p>
         <Button onClick={proceedToNight} disabled={!revealed}>
-          I'M READY — PROCEED TO NIGHT
+          {"I'M READY — PROCEED TO NIGHT"}
         </Button>
       </div>
     </div>

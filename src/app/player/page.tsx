@@ -1,6 +1,7 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSocket } from '@/components/providers/SocketContext';
 import { ConnectionBanner } from '@/components/ConnectionBanner';
@@ -33,14 +34,35 @@ import { GameResult } from '@/components/player/GameResult';
 export default function PlayerPortal() {
   const { gameState, connected } = useSocket();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!gameState) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const playerName = sessionStorage.getItem('techmafia_playerName');
+    const teamId = sessionStorage.getItem('techmafia_teamId');
+    const roomCode = sessionStorage.getItem('techmafia_roomCode');
+    if (!gameState && (!playerName || !teamId || !roomCode)) {
       router.replace('/');
     }
-  }, [gameState, router]);
+  }, [gameState, router, mounted]);
 
-  if (!gameState) return null;
+  if (!mounted || !gameState) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+        <div className="text-center text-gray-400">
+          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
+          </div>
+          <p className="font-semibold text-gray-600">{!mounted ? "Loading..." : "Reconnecting..."}</p>
+          <p className="text-sm mt-1">{!mounted ? "Initializing..." : "Establishing connection to the game room"}</p>
+        </div>
+      </div>
+    );
+  }
 
   const renderScreen = () => {
     switch (gameState.currentState) {
@@ -67,6 +89,19 @@ export default function PlayerPortal() {
 
       // ── Phase 10: Role Reveal (first time player sees their role) ─────
       case 'ROLE_REVEAL':
+        if (!gameState.myRole) {
+          return (
+            <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+              <div className="text-center text-gray-400">
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
+                </div>
+                <p className="font-semibold text-gray-600">Loading Role...</p>
+                <p className="text-sm mt-1">Please wait...</p>
+              </div>
+            </div>
+          );
+        }
         return <RoleReveal />;
 
       // ── Phase 11: Night ───────────────────────────────────────────────

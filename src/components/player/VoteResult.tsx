@@ -4,7 +4,7 @@ import { Button } from '../Button';
 
 /** Shows after every voting round: vote tally, eliminated player + their role, then next action */
 export function VoteResult() {
-  const { gameState, proceedToNight, startDiscussion } = useSocket();
+  const { gameState, proceedToNight } = useSocket();
   if (!gameState) return null;
 
   const tally = gameState.voteTally ?? [];

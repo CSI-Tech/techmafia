@@ -1,6 +1,6 @@
-import { Team, Player } from './types';
-import { GameState, Role, PlayerStatus, PublicPlayer, VoteTally } from '@/types';
-import { loadRound1Questions, loadNightQuizzes, loadWordPairs, QuestionSet, NightQuiz } from './content';
+import { Team } from './types';
+import { PublicPlayer } from '@/types';
+import { loadRound1Questions, loadNightQuizzes } from './content';
 
 export class GameManager {
   private teams: Map<string, Team> = new Map();
@@ -79,7 +79,6 @@ export class GameManager {
       id: playerId,
       name: playerName,
       role: null,
-      word: null,
       status: 'ALIVE',
     });
 
@@ -117,15 +116,6 @@ export class GameManager {
       team.players[indices[i]].role = 'CIVILIAN';
     }
 
-    // Load a word pair just in case (as backup word-pair concept)
-    const wordPairs = loadWordPairs();
-    if (wordPairs.length > 0) {
-      const pair = wordPairs[Math.floor(Math.random() * wordPairs.length)];
-      team.players.forEach(p => {
-        if (p.role === 'MAFIA') p.word = pair.mafia;
-        else p.word = pair.civilian;
-      });
-    }
   }
 
   startRound1Question(teamId: string): Team | null {
@@ -294,6 +284,7 @@ export class GameManager {
       if (eliminated) {
         eliminated.status = 'DEAD';
         eliminated.eliminatedRound = team.currentRound;
+        eliminated.eliminatedCause = 'VOTED_OUT';
         team.eliminatedThisRound = eliminatedName;
         team.eliminatedRoleThisRound = eliminated.role;
       }
@@ -338,7 +329,7 @@ export class GameManager {
     return team;
   }
 
-  submitNightQuiz(teamId: string, playerId: string, answer: string): boolean {
+  submitNightQuiz(teamId: string, playerId: string): boolean {
     const team = this.teams.get(teamId);
     if (!team || team.currentState !== 'NIGHT') return false;
 
@@ -418,6 +409,7 @@ export class GameManager {
         if (target.role === 'MAFIA') {
           // Mafia investigated dies immediately
           deadThisNight.add(target.id);
+          target.eliminatedCause = 'INVESTIGATOR_REVEAL';
           team.investigatorResult = `${target.name} is MAFIA.`;
           successfulInvestigatorReveal = `${target.name} was a MAFIA revealed by the Investigator and has been eliminated.`;
         } else {
@@ -433,6 +425,10 @@ export class GameManager {
 
     mafiaTargets.forEach(targetId => {
       deadThisNight.add(targetId);
+      const target = team.players.find(p => p.id === targetId);
+      if (target && !target.eliminatedCause) {
+        target.eliminatedCause = 'MAFIA_KILL';
+      }
     });
 
     // 3. Apply deaths
@@ -442,6 +438,9 @@ export class GameManager {
       if (player) {
         player.status = 'DEAD';
         player.eliminatedRound = team.currentRound;
+        if (!player.eliminatedCause) {
+          player.eliminatedCause = 'OTHER';
+        }
 
         if (player.role === 'MAFIA') {
           if (successfulInvestigatorReveal && successfulInvestigatorReveal.startsWith(player.name)) {
@@ -571,7 +570,6 @@ export class GameManager {
       // Private to this player
       myId: playerId,
       myRole: hideRole ? null : (reqPlayer ? reqPlayer.role : null),
-      myWord: hideRole ? null : (reqPlayer ? reqPlayer.word : null),
       myStatus: reqPlayer ? reqPlayer.status : null,
       myMafiaPartner: hideRole ? null : mafiaPartner,
       myRound1Question,
@@ -586,4 +584,6 @@ export class GameManager {
   }
 }
 
-export const gameManager = new GameManager();
+const globalForGame = global as unknown as { gameManager?: GameManager };
+export const gameManager = globalForGame.gameManager ?? new GameManager();
+if (process.env.NODE_ENV !== 'production') globalForGame.gameManager = gameManager;

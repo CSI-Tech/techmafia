@@ -4,7 +4,7 @@ import { useAdminSocket } from '@/components/providers/AdminSocketContext';
 import { Button } from '@/components/Button';
 
 export default function GenerateTeam() {
-  const { refreshTeams } = useAdminSocket();
+  const { refreshTeams, liveTeams, teams } = useAdminSocket();
   const [teamNumber, setTeamNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ teamId: string; roomCode: string; error?: string } | null>(null);
@@ -17,7 +17,7 @@ export default function GenerateTeam() {
     setResult(null);
 
     try {
-      const res = await fetch('http://localhost:3001/api/admin/teams/generate', {
+      const res = await fetch('/api/admin/teams/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,11 +42,17 @@ export default function GenerateTeam() {
     }
   };
 
-  const copyToClipboard = () => {
-    if (result && result.roomCode) {
-      navigator.clipboard.writeText(`Team: ${result.teamId}\nCode: ${result.roomCode}`);
-    }
+  const getLiveStats = () => {
+    if (!result || !result.teamId) return { count: 0, status: 'WAITING' };
+    const liveTeam = liveTeams[result.teamId];
+    const dbTeam = teams.find(t => t.teamId === result.teamId);
+    return {
+      count: liveTeam ? liveTeam.players.length : (dbTeam ? dbTeam.playerNames.length : 0),
+      status: liveTeam ? liveTeam.currentState : (dbTeam ? dbTeam.status : 'WAITING')
+    };
   };
+
+  const stats = getLiveStats();
 
   return (
     <div className="p-6 md:p-10 max-w-3xl mx-auto space-y-10">
@@ -89,12 +95,20 @@ export default function GenerateTeam() {
               </div>
               
               <p className="text-sm text-gray-600 font-medium mb-6">
-                Give this Team Number and Room Code to the players.
+                {"Give this Team Number and Room Code to the players."}
               </p>
 
-              <Button variant="outline" onClick={copyToClipboard}>
-                COPY CODE
-              </Button>
+              <div className="flex justify-center gap-8 mb-6 bg-white p-4 rounded-xl border border-gray-150 w-fit mx-auto px-8 text-left">
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Players</span>
+                  <span className="text-lg font-extrabold text-gray-800">{stats.count} / 8</span>
+                </div>
+                <div className="border-l border-gray-200" />
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Status</span>
+                  <span className="text-lg font-extrabold text-primary uppercase whitespace-nowrap">{stats.status}</span>
+                </div>
+              </div>
             </div>
           )}
 

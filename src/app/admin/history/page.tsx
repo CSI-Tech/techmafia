@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AdminTeam } from '@/types';
 import { Button } from '@/components/Button';
-import { StatusBadge } from '@/components/admin/StatusBadge';
+
 
 export default function GameHistory() {
   const router = useRouter();
@@ -13,7 +13,7 @@ export default function GameHistory() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/admin/history', {
+        const res = await fetch('/api/admin/history', {
           headers: { 'x-admin-auth': 'true' }
         });
         const data = await res.json();

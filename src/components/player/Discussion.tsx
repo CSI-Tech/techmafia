@@ -48,9 +48,6 @@ export function Discussion() {
               gameState.myRole === 'INVESTIGATOR' ? 'text-amber-600' :
               'text-blue-600'
             }`}>{gameState.myRole}</p>
-            {gameState.myWord && (
-              <p className="text-xs text-gray-500 font-medium mt-0.5">Word: <span className="font-bold text-gray-700">{gameState.myWord}</span></p>
-            )}
           </div>
         )}
 
@@ -60,11 +57,7 @@ export function Discussion() {
           <ul className="space-y-2 text-sm text-gray-600 font-medium">
             <li className="flex items-start gap-2">
               <span className="text-primary font-bold mt-0.5">•</span>
-              Describe your secret word without saying it directly.
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary font-bold mt-0.5">•</span>
-              Someone has a slightly different word — find them.
+              Identify the Mafia based on their round 1 answers.
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary font-bold mt-0.5">•</span>

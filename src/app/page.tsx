@@ -10,6 +10,16 @@ type Mode = 'SELECT_ROLE' | 'PLAYER' | 'ADMIN';
 // In Next.js App Router API routes, we call our own API Route
 const BACKEND_URL = '';
 
+const Header = () => (
+  <div className="text-center space-y-1 mb-10">
+    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
+      <span className="text-white text-3xl font-extrabold">M</span>
+    </div>
+    <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">MAFIA</h1>
+    <p className="text-sm text-gray-400 font-medium">The social deduction game</p>
+  </div>
+);
+
 export default function JoinPage() {
   const [mode, setMode] = useState<Mode>('SELECT_ROLE');
 
@@ -72,16 +82,7 @@ export default function JoinPage() {
 
   const displayError = error || localError;
 
-  // ── Shared header ────────────────────────────────────────────────────────────
-  const Header = () => (
-    <div className="text-center space-y-1 mb-10">
-      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
-        <span className="text-white text-3xl font-extrabold">M</span>
-      </div>
-      <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">MAFIA</h1>
-      <p className="text-sm text-gray-400 font-medium">The social deduction game</p>
-    </div>
-  );
+
 
   // ── Role selection screen ────────────────────────────────────────────────────
   if (mode === 'SELECT_ROLE') {
@@ -104,7 +105,7 @@ export default function JoinPage() {
               className="w-full bg-primary text-white rounded-2xl p-5 text-left shadow-sm active:scale-[0.98] transition-transform"
             >
               <p className="text-lg font-extrabold tracking-tight">JOIN GAME</p>
-              <p className="text-white/70 text-sm font-medium mt-0.5">I'm a Player</p>
+              <p className="text-white/70 text-sm font-medium mt-0.5">I&apos;m a Player</p>
             </button>
 
             <button
@@ -113,7 +114,7 @@ export default function JoinPage() {
               className="w-full bg-white border-2 border-gray-100 text-gray-900 rounded-2xl p-5 text-left shadow-sm active:scale-[0.98] transition-transform"
             >
               <p className="text-lg font-extrabold tracking-tight text-gray-800">LOGIN AS ADMIN</p>
-              <p className="text-gray-400 text-sm font-medium mt-0.5">I'm an Organizer</p>
+              <p className="text-gray-400 text-sm font-medium mt-0.5">I&apos;m an Organizer</p>
             </button>
           </div>
         </div>
@@ -235,7 +236,7 @@ export default function JoinPage() {
           )}
 
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Username</label>
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Email / Username</label>
             <input
               id="input-admin-username"
               type="text"
@@ -270,7 +271,7 @@ export default function JoinPage() {
           onClick={handleAdminLogin}
           disabled={adminLoading}
         >
-          {adminLoading ? 'VERIFYING...' : 'LOGIN AS ADMIN'}
+          {adminLoading ? 'VERIFYING...' : 'LOGIN'}
         </Button>
       </div>
     </div>

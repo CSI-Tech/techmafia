@@ -56,7 +56,6 @@ export type SanitizedGameState = {
   // Current player's private info
   myId: string;
   myRole: Role;
-  myWord: string | null;
   myStatus: PlayerStatus | null;
   myMafiaPartner: string | null;
   myRound1Question: QuestionData | null;
@@ -75,9 +74,15 @@ export const __types = true;
 export type RoomStatus = 'WAITING' | 'READY' | 'IN_PROGRESS' | 'COMPLETED';
 
 export type AdminPlayer = {
+  id?: string;
   name: string;
   role: Role;
   status: PlayerStatus;
+  eliminatedRound?: number;
+  eliminatedCause?: string;
+  nightQuizAnswered?: boolean;
+  nightActionTarget?: string | null;
+  targetPlayerName?: string | null;
 };
 
 /** Full team snapshot pushed over admin Socket.IO namespace */

@@ -2,6 +2,8 @@ import { Namespace, Server, Socket } from 'socket.io';
 import { gameManager } from '../game/GameManager';
 import { logEvent, updateRoomStatus } from '../services/GameLogger';
 
+import type { Team, Player } from '../game/types';
+
 export function setupSocketHandlers(io: Server, adminNs: Namespace) {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -30,9 +32,15 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
       timerEndsAt: team.timerEndsAt,
       winner: team.winner,
       players: team.players.map((p) => ({
+        id: p.id,
         name: p.name,
         role: p.role,
         status: p.status,
+        eliminatedRound: p.eliminatedRound,
+        eliminatedCause: p.eliminatedCause,
+        nightQuizAnswered: p.nightQuizAnswered,
+        nightActionTarget: p.nightActionTarget,
+        targetPlayerName: team.players.find(tp => tp.id === p.nightActionTarget)?.name || null,
       })),
       aliveCount: team.players.filter((p) => p.status === 'ALIVE').length,
       deadCount: team.players.filter((p) => p.status === 'DEAD').length,
@@ -70,7 +78,17 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
       currentRound: team.currentRound,
       timerEndsAt: team.timerEndsAt,
       winner: team.winner,
-      players: team.players.map((p) => ({ name: p.name, role: p.role, status: p.status })),
+      players: team.players.map((p) => ({
+        id: p.id,
+        name: p.name,
+        role: p.role,
+        status: p.status,
+        eliminatedRound: p.eliminatedRound,
+        eliminatedCause: p.eliminatedCause,
+        nightQuizAnswered: p.nightQuizAnswered,
+        nightActionTarget: p.nightActionTarget,
+        targetPlayerName: team.players.find(tp => tp.id === p.nightActionTarget)?.name || null,
+      })),
       aliveCount: team.players.filter((p) => p.status === 'ALIVE').length,
       deadCount: team.players.filter((p) => p.status === 'DEAD').length,
       eliminatedThisRound: team.eliminatedThisRound,
@@ -168,8 +186,8 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
       }
     });
 
-    socket.on('submitNightQuiz', ({ teamId, answer }: { teamId: string; answer: string }) => {
-      if (gameManager.submitNightQuiz(teamId, socket.id, answer)) {
+    socket.on('submitNightQuiz', ({ teamId }: { teamId: string }) => {
+      if (gameManager.submitNightQuiz(teamId, socket.id)) {
         logEvent(teamId, gameManager.getTeam(teamId)!.roomCode, gameManager.getTeam(teamId)!.currentRound, `${socket.data.playerName} solved Night quiz`);
         broadcastGameState(teamId);
         checkAndLogNightCompletion(teamId);
@@ -216,11 +234,11 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
       });
     });
 
-    const logGameComplete = (teamId: string, team: any) => {
+    const logGameComplete = (teamId: string, team: Team) => {
       logEvent(teamId, team.roomCode, team.currentRound, `Game complete — ${team.winner} win`);
       const advancingNames = team.players
-        .filter((p: any) => team.advancingPlayers.includes(p.id))
-        .map((p: any) => p.name);
+        .filter((p: Player) => team.advancingPlayers.includes(p.id))
+        .map((p: Player) => p.name);
 
       updateRoomStatus(teamId, {
         status: 'COMPLETED',
@@ -228,13 +246,17 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
         rounds: team.currentRound,
         completedAt: new Date(),
         eliminationHistory: team.players
-          .filter((p: any) => p.status === 'DEAD')
-          .map((p: any) => ({
+          .filter((p: Player) => p.status === 'DEAD')
+          .map((p: Player) => ({
             round: p.eliminatedRound || 0,
             playerName: p.name,
             role: p.role ?? 'UNKNOWN',
           })),
         advancingPlayerNames: advancingNames,
+        playerRoles: team.players.map((p: Player) => ({
+          name: p.name,
+          role: p.role,
+        })),
       });
     };
 

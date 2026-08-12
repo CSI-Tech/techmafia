@@ -1,3 +1,4 @@
+/* eslint-disable */
 const { io } = require('socket.io-client');
 
 const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();

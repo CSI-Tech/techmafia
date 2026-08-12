@@ -17,7 +17,9 @@ export function TeamCard({ team }: TeamCardProps) {
 
   useEffect(() => {
     if (!live?.timerEndsAt) {
-      setTimeLeft(null);
+      setTimeout(() => {
+        setTimeLeft(null);
+      }, 0);
       return;
     }
     const updateTimer = () => {
@@ -52,6 +54,10 @@ export function TeamCard({ team }: TeamCardProps) {
         {isCompleted ? (
           <>
             <div className="flex justify-between items-center">
+              <span className="text-sm font-semibold text-gray-500">Status</span>
+              <span className="text-sm font-bold text-red-600">COMPLETED</span>
+            </div>
+            <div className="flex justify-between items-center">
               <span className="text-sm font-semibold text-gray-500">Winner</span>
               <span className="text-lg font-bold text-primary">{team.winner || live?.winner || 'Unknown'}</span>
             </div>
@@ -63,8 +69,20 @@ export function TeamCard({ team }: TeamCardProps) {
         ) : live ? (
           <>
             <div className="flex justify-between items-center">
-              <span className="text-sm font-semibold text-gray-500">Round {live.currentRound}</span>
-              <span className="text-xl font-bold text-primary">
+              <span className="text-sm font-semibold text-gray-500">Status</span>
+              <span className="text-sm font-bold text-green-600">LIVE</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-semibold text-gray-500">Round</span>
+              <span className="text-sm font-bold text-gray-900">{live.currentRound}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-semibold text-gray-500">Stage</span>
+              <span className="text-sm font-bold text-primary">{live.currentState}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-semibold text-gray-500">Timer</span>
+              <span className="text-lg font-extrabold text-primary tabular-nums">
                 {timeLeft !== null ? formatTime(timeLeft) : '--:--'}
               </span>
             </div>
@@ -76,13 +94,23 @@ export function TeamCard({ team }: TeamCardProps) {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-semibold text-gray-500">Alive</span>
-              <span className="text-sm font-bold text-gray-900">
+              <span className="text-sm font-bold text-green-700">
                 {live.aliveCount}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-semibold text-gray-500">Dead</span>
+              <span className="text-sm font-bold text-red-600">
+                {live.players.length - live.aliveCount}
               </span>
             </div>
           </>
         ) : (
           <>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-semibold text-gray-500">Status</span>
+              <span className="text-sm font-bold text-yellow-600">WAITING</span>
+            </div>
              <div className="flex justify-between items-center">
               <span className="text-sm font-semibold text-gray-500">Players</span>
               <span className="text-sm font-bold text-gray-900">

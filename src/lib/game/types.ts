@@ -1,12 +1,12 @@
-import { GameState, Role, PlayerStatus, PublicPlayer, VoteTally } from '@/types';
+import { GameState, Role, PlayerStatus, VoteTally } from '@/types';
 
 export interface Player {
   id: string;
   name: string;
   role: Role;
-  word: string | null;
   status: PlayerStatus;
   eliminatedRound?: number;
+  eliminatedCause?: 'VOTED_OUT' | 'MAFIA_KILL' | 'INVESTIGATOR_REVEAL' | 'OTHER';
   
   // Game flow details
   round1Answered?: boolean;

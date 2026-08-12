@@ -11,7 +11,11 @@ export default function GameLogs() {
   // Filters
   const [teamIdFilter, setTeamIdFilter] = useState('');
   const [roomCodeFilter, setRoomCodeFilter] = useState('');
+  const [roundFilter, setRoundFilter] = useState('');
+  const [stageFilter, setStageFilter] = useState('');
   const [eventFilter, setEventFilter] = useState('');
+  const [playerFilter, setPlayerFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -19,9 +23,13 @@ export default function GameLogs() {
       const query = new URLSearchParams();
       if (teamIdFilter) query.append('teamId', teamIdFilter);
       if (roomCodeFilter) query.append('roomCode', roomCodeFilter);
+      if (roundFilter) query.append('round', roundFilter);
+      if (stageFilter) query.append('stage', stageFilter);
       if (eventFilter) query.append('event', eventFilter);
+      if (playerFilter) query.append('player', playerFilter);
+      if (dateFilter) query.append('date', dateFilter);
 
-      const res = await fetch(`http://localhost:3001/api/admin/logs?${query.toString()}`, {
+      const res = await fetch(`/api/admin/logs?${query.toString()}`, {
         headers: { 'x-admin-auth': 'true' }
       });
       const data = await res.json();
@@ -36,7 +44,9 @@ export default function GameLogs() {
   };
 
   useEffect(() => {
-    fetchLogs();
+    setTimeout(() => {
+      fetchLogs();
+    }, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -48,9 +58,13 @@ export default function GameLogs() {
   const handleClear = () => {
     setTeamIdFilter('');
     setRoomCodeFilter('');
+    setRoundFilter('');
+    setStageFilter('');
     setEventFilter('');
+    setPlayerFilter('');
+    setDateFilter('');
     setTimeout(() => {
-      fetchLogs(); // relies on state batching, but safest to just call manually or wait for effect. Actually, let's just trigger a re-fetch without filters.
+      fetchLogs();
     }, 0);
   };
 
@@ -66,38 +80,88 @@ export default function GameLogs() {
         
         {/* Filters */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
-          <form onSubmit={handleFilter} className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Team ID</label>
-              <input
-                type="text"
-                value={teamIdFilter}
-                onChange={(e) => setTeamIdFilter(e.target.value)}
-                placeholder="e.g. TEAM05"
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-medium focus:outline-none focus:border-primary focus:bg-white transition-colors"
-              />
+          <form onSubmit={handleFilter} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Team ID</label>
+                <input
+                  type="text"
+                  value={teamIdFilter}
+                  onChange={(e) => setTeamIdFilter(e.target.value)}
+                  placeholder="e.g. TEAM05"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-medium focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Room Code</label>
+                <input
+                  type="text"
+                  value={roomCodeFilter}
+                  onChange={(e) => setRoomCodeFilter(e.target.value)}
+                  placeholder="e.g. K7M2PX"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-medium focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Round</label>
+                <input
+                  type="number"
+                  value={roundFilter}
+                  onChange={(e) => setRoundFilter(e.target.value)}
+                  placeholder="e.g. 1"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-medium focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Stage</label>
+                <select
+                  value={stageFilter}
+                  onChange={(e) => setStageFilter(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-medium focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                >
+                  <option value="">All Stages</option>
+                  <option value="WAITING">Waiting Room</option>
+                  <option value="QUESTION">Question</option>
+                  <option value="DISCUSSION">Discussion</option>
+                  <option value="VOTING">Voting</option>
+                  <option value="RESULT">Result</option>
+                  <option value="REVEAL">Role Reveal</option>
+                  <option value="NIGHT">Night</option>
+                  <option value="MORNING">Morning</option>
+                  <option value="COMPLETE">Game Complete</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Event Keywords</label>
+                <input
+                  type="text"
+                  value={eventFilter}
+                  onChange={(e) => setEventFilter(e.target.value)}
+                  placeholder="e.g. joined"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-medium focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Player Name</label>
+                <input
+                  type="text"
+                  value={playerFilter}
+                  onChange={(e) => setPlayerFilter(e.target.value)}
+                  placeholder="e.g. Alex"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-medium focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Date</label>
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-medium focus:outline-none focus:border-primary focus:bg-white transition-colors"
+                />
+              </div>
             </div>
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Room Code</label>
-              <input
-                type="text"
-                value={roomCodeFilter}
-                onChange={(e) => setRoomCodeFilter(e.target.value)}
-                placeholder="e.g. K7M2PX"
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-medium focus:outline-none focus:border-primary focus:bg-white transition-colors"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Event Type</label>
-              <input
-                type="text"
-                value={eventFilter}
-                onChange={(e) => setEventFilter(e.target.value)}
-                placeholder="e.g. eliminated"
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 font-medium focus:outline-none focus:border-primary focus:bg-white transition-colors"
-              />
-            </div>
-            <div className="flex gap-2">
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
               <Button type="submit">FILTER</Button>
               <Button variant="outline" type="button" onClick={handleClear}>CLEAR</Button>
             </div>

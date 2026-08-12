@@ -22,7 +22,7 @@ export function MorningResult() {
             Round {gameState.currentRound - 1} · Night Resolved
           </div>
           <h1 className="text-2xl font-extrabold text-gray-900">Morning Has Arrived</h1>
-          <p className="text-sm text-gray-500 mt-1 font-medium">Here's what happened during the night.</p>
+          <p className="text-sm text-gray-500 mt-1 font-medium">{"Here's what happened during the night."}</p>
         </div>
 
         {/* Dead banner for eliminated players */}

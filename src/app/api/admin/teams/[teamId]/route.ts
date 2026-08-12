@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { GameRoom } from '@/lib/db/models/GameRoom';
+import { getRoom } from '@/lib/db/dbHelper';
 import { gameManager } from '@/lib/game/GameManager';
 
 export async function GET(request: Request, { params }: { params: Promise<{ teamId: string }> }) {
   try {
     const { teamId } = await params;
-    const room = await GameRoom.findOne({ teamId }).lean();
+    const room = await getRoom(teamId);
     if (!room) {
       return NextResponse.json({ success: false, message: 'Team not found' }, { status: 404 });
     }
@@ -25,7 +25,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ team
                 name: p.name,
                 role: p.role,
                 status: p.status,
-                word: p.word,
+                eliminatedRound: p.eliminatedRound,
+                eliminatedCause: p.eliminatedCause,
+                nightQuizAnswered: p.nightQuizAnswered,
+                nightActionTarget: p.nightActionTarget,
+                targetPlayerName: live.players.find(tp => tp.id === p.nightActionTarget)?.name || null,
               })),
               votes: live.votes,
               voteTally: live.voteTally,

@@ -1,8 +1,7 @@
-import { GameLog } from '../db/models/GameLog';
-import { GameRoom } from '../db/models/GameRoom';
+import { createLog, updateRoom } from '../db/dbHelper';
 
 /**
- * Write a chronological game event to MongoDB.
+ * Write a chronological game event.
  * Silently swallows errors so a logging failure never crashes the game.
  */
 export async function logEvent(
@@ -13,7 +12,7 @@ export async function logEvent(
   detail?: string
 ): Promise<void> {
   try {
-    await GameLog.create({ teamId, roomCode, round, event, detail });
+    await createLog({ teamId, roomCode, round, event, detail });
   } catch (err) {
     console.error('[GameLogger] Failed to write log:', err);
   }
@@ -32,10 +31,11 @@ export async function updateRoomStatus(
     completedAt: Date;
     eliminationHistory: { round: number; playerName: string; role: string }[];
     advancingPlayerNames: string[];
+    playerRoles: { name: string; role: string }[];
   }>
 ): Promise<void> {
   try {
-    await GameRoom.updateOne({ teamId }, { $set: update });
+    await updateRoom(teamId, update);
   } catch (err) {
     console.error('[GameLogger] Failed to update room status:', err);
   }

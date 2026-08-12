@@ -33,7 +33,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       reconnectionAttempts: 10,
     });
 
-    s.on('connect', () => setConnected(true));
+    s.on('connect', () => {
+      setConnected(true);
+      const playerName = sessionStorage.getItem('techmafia_playerName');
+      const teamId = sessionStorage.getItem('techmafia_teamId');
+      const roomCode = sessionStorage.getItem('techmafia_roomCode');
+      if (playerName && teamId && roomCode) {
+        s.emit('joinRoom', { teamId, roomCode, playerName });
+      }
+    });
     s.on('disconnect', () => setConnected(false));
 
     s.on('gameStateSync', (state: SanitizedGameState) => {
@@ -49,11 +57,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setError(msg);
     });
 
-    setSocket(s);
+    setTimeout(() => {
+      setSocket(s);
+    }, 0);
     return () => { s.disconnect(); };
   }, []);
 
   const joinRoom = (teamId: string, roomCode: string, playerName: string) => {
+    sessionStorage.setItem('techmafia_playerName', playerName);
+    sessionStorage.setItem('techmafia_teamId', teamId);
+    sessionStorage.setItem('techmafia_roomCode', roomCode);
     socket?.emit('joinRoom', { teamId, roomCode, playerName });
   };
 

@@ -1,4 +1,4 @@
-import { GameRoom } from '../db/models/GameRoom';
+import { getRooms } from '../db/dbHelper';
 
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars
 
@@ -11,13 +11,13 @@ function randomCode(): string {
 }
 
 /**
- * Generates a 6-character room code that does not already exist in MongoDB.
+ * Generates a 6-character room code that does not already exist.
  */
 export async function generateUniqueRoomCode(): Promise<string> {
   for (let attempt = 0; attempt < 20; attempt++) {
     const code = randomCode();
-    const existing = await GameRoom.findOne({ roomCode: code });
-    if (!existing) return code;
+    const existing = await getRooms({ roomCode: code });
+    if (existing.length === 0) return code;
   }
   throw new Error('Could not generate a unique room code after 20 attempts');
 }

@@ -1,5 +1,6 @@
 "use client";
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+/* eslint-disable */
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { AdminTeam, AdminTeamUpdate } from '@/types';
 
@@ -31,7 +32,9 @@ export const AdminSocketProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   useEffect(() => {
-    refreshTeams();
+    setTimeout(() => {
+      refreshTeams();
+    }, 0);
 
     const socket: Socket = io(`${BACKEND}/admin`, {
       reconnectionDelay: 500,
@@ -61,8 +64,56 @@ export const AdminSocketProvider: React.FC<{ children: React.ReactNode }> = ({ c
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const mergedTeams = [...teams];
+
+  // Merge dynamic liveTeams updates into the teams array
+  Object.values(liveTeams).forEach((liveUpdate) => {
+    const existingIdx = mergedTeams.findIndex((t) => t.teamId === liveUpdate.teamId);
+    const updatedTeam = {
+      teamId: liveUpdate.teamId,
+      roomCode: liveUpdate.roomCode,
+      teamNumber: liveUpdate.teamId, // fallback
+      status: liveUpdate.currentState === 'GAME_COMPLETE' 
+        ? 'COMPLETED' 
+        : (liveUpdate.currentState === 'WAITING_FOR_PLAYERS' ? 'WAITING' : 'IN_PROGRESS'),
+      winner: liveUpdate.winner,
+      rounds: liveUpdate.currentRound,
+      playerNames: liveUpdate.players.map((p) => p.name),
+      createdAt: new Date().toISOString(), // fallback
+      live: {
+        currentState: liveUpdate.currentState,
+        currentRound: liveUpdate.currentRound,
+        timerEndsAt: liveUpdate.timerEndsAt,
+        playerCount: liveUpdate.players.length,
+        aliveCount: liveUpdate.players.filter((p) => p.status === 'ALIVE').length,
+        deadCount: liveUpdate.players.filter((p) => p.status === 'DEAD').length,
+        players: liveUpdate.players.map((p) => ({
+          name: p.name,
+          role: p.role,
+          status: p.status,
+          eliminatedRound: p.eliminatedRound,
+          eliminatedCause: p.eliminatedCause,
+          nightQuizAnswered: p.nightQuizAnswered,
+          nightActionTarget: p.nightActionTarget,
+          targetPlayerName: p.targetPlayerName,
+        })),
+      },
+    };
+
+    if (existingIdx >= 0) {
+      mergedTeams[existingIdx] = {
+        ...mergedTeams[existingIdx],
+        ...updatedTeam,
+        teamNumber: mergedTeams[existingIdx].teamNumber || updatedTeam.teamNumber,
+        createdAt: mergedTeams[existingIdx].createdAt || updatedTeam.createdAt,
+      };
+    } else {
+      mergedTeams.push(updatedTeam as any);
+    }
+  });
+
   return (
-    <AdminSocketContext.Provider value={{ connected, liveTeams, teams, refreshTeams }}>
+    <AdminSocketContext.Provider value={{ connected, liveTeams, teams: mergedTeams, refreshTeams }}>
       {children}
     </AdminSocketContext.Provider>
   );
