@@ -1,7 +1,12 @@
 /**
- * MongoDB Atlas connection check — tries SRV first, then direct hosts as fallback.
+ * MongoDB Atlas connection check — forces Node DNS to 8.8.8.8 to bypass localhost proxy.
  * Masks credentials in all output.
  */
+
+// ── Fix: override Node's DNS before anything else ──────────────────────────
+import dns from 'dns';
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 import mongoose from 'mongoose';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -22,49 +27,27 @@ if (!rawUri) {
   process.exit(1);
 }
 
-// Extract credentials from SRV URI and build direct URI for fallback
-const match = rawUri.match(/mongodb\+srv:\/\/([^:]+):([^@]+)@([^/?]+)/);
-let directUri = null;
-if (match) {
-  const [, user, pass, host] = match;
-  const baseHost = host; // e.g. mafia-game-cluster.q3aa6qj.mongodb.net
-  // Use the actual shard hosts discovered from DNS
-  directUri = `mongodb://${user}:${pass}@ac-k8e1sag-shard-00-00.q3aa6qj.mongodb.net:27017,ac-k8e1sag-shard-00-01.q3aa6qj.mongodb.net:27017,ac-k8e1sag-shard-00-02.q3aa6qj.mongodb.net:27017/?ssl=true&replicaSet=atlas-xxxxx&authSource=admin&retryWrites=true&w=majority`;
-}
-
 const maskedUri = rawUri.replace(/:\/\/([^:@]+):([^@]+)@/, '://<user>:****@');
-console.log(`\n🔍  URI present: ${maskedUri.substring(0, 60)}...\n`);
-console.log('📡  Attempting SRV connection (8s timeout)...');
+console.log(`\n🔍  Connecting to: ${maskedUri.substring(0, 70)}...\n`);
+console.log('📡  DNS forced to 8.8.8.8 / 1.1.1.1 (bypass localhost proxy)\n');
 
-async function tryConnect(uri, label) {
-  try {
-    const conn = await mongoose.createConnection(uri, {
-      serverSelectionTimeoutMS: 8000,
-      connectTimeoutMS: 8000,
-    }).asPromise();
-    const dbName = conn.db?.databaseName ?? '(unknown)';
-    const host = conn.host ?? '(unknown)';
-    console.log(`\n✅  MongoDB connection: SUCCESS (${label})`);
-    console.log(`    Database : ${dbName}`);
-    console.log(`    Host     : ${host}`);
-    await conn.close();
-    return true;
-  } catch (err) {
-    console.log(`❌  ${label} FAILED: ${err.message}`);
-    return false;
-  }
-}
+try {
+  const conn = await mongoose.createConnection(rawUri, {
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
+  }).asPromise();
 
-let ok = await tryConnect(rawUri, 'SRV');
+  const dbName = conn.db?.databaseName ?? '(unknown)';
+  const host   = conn.host ?? '(unknown)';
 
-if (!ok && directUri) {
-  console.log('\n📡  Trying direct replicaset connection...');
-  ok = await tryConnect(directUri, 'Direct');
-}
-
-if (ok) {
+  console.log('✅  MongoDB connection: SUCCESS');
+  console.log(`    Database : ${dbName}`);
+  console.log(`    Host     : ${host}`);
   console.log('\n✅  Project is ready for MongoDB integration.\n');
-} else {
-  console.log('\n❌  Both connection attempts failed. See errors above.\n');
+
+  await conn.close();
+} catch (err) {
+  console.error('❌  MongoDB connection: FAILED');
+  console.error(`    Error: ${err.message}`);
   process.exit(1);
 }
