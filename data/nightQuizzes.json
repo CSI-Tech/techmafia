@@ -1,0 +1,26 @@
+{
+  "quizzes": [
+    {
+      "id": "basic-001",
+      "question": "Which planet is known as the Red Planet?",
+      "options": [
+        "Earth",
+        "Mars",
+        "Jupiter",
+        "Venus"
+      ],
+      "answer": "Mars"
+    },
+    {
+      "id": "basic-002",
+      "question": "What is the capital city of France?",
+      "options": [
+        "Berlin",
+        "London",
+        "Paris",
+        "Rome"
+      ],
+      "answer": "Paris"
+    }
+  ]
+}

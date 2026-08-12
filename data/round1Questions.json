@@ -1,0 +1,52 @@
+{
+  "sets": [
+    {
+      "id": "sql",
+      "category": "SQL",
+      "civilian": {
+        "question": "Which SQL command is used to retrieve data from a table?",
+        "options": [
+          "INSERT",
+          "SELECT",
+          "UPDATE",
+          "DELETE"
+        ],
+        "answer": "SELECT"
+      },
+      "mafia": {
+        "question": "Which SQL command is used to modify existing data in a table?",
+        "options": [
+          "SELECT",
+          "INSERT",
+          "UPDATE",
+          "CREATE"
+        ],
+        "answer": "UPDATE"
+      }
+    },
+    {
+      "id": "git",
+      "category": "Git",
+      "civilian": {
+        "question": "Which Git command is used to create a new branch?",
+        "options": [
+          "git clone",
+          "git branch",
+          "git commit",
+          "git push"
+        ],
+        "answer": "git branch"
+      },
+      "mafia": {
+        "question": "Which Git command is used to merge changes from another branch?",
+        "options": [
+          "git pull",
+          "git branch",
+          "git merge",
+          "git clone"
+        ],
+        "answer": "git merge"
+      }
+    }
+  ]
+}
