@@ -16,8 +16,9 @@ export async function connectMongo(): Promise<void> {
     connected = true;
     console.log('[DB] MongoDB connected');
   } catch (err: any) {
-    console.warn('[DB] MongoDB connection failed. Running in-memory database fallback mode:', err.message);
+    console.error('[DB] MongoDB connection failed:', err.message);
     connected = false;
+    throw err;
   }
 }
 

@@ -5,6 +5,37 @@ import { loadRound1Questions, loadNightQuizzes } from './content';
 export class GameManager {
   private teams: Map<string, Team> = new Map();
 
+  initializeTeam(teamId: string, roomCode: string, status?: string): Team {
+    if (!this.teams.has(teamId)) {
+      this.teams.set(teamId, {
+        teamId,
+        roomCode,
+        players: [],
+        currentState: status === 'READY' ? 'READY' : (status === 'IN_PROGRESS' ? 'ROUND_1_QUESTION' : 'WAITING_FOR_PLAYERS'),
+        currentRound: 1,
+        timerEndsAt: null,
+        votes: {},
+        eliminatedThisRound: null,
+        eliminatedRoleThisRound: null,
+        voteTally: [],
+        winner: null,
+        alivePlayers: 0,
+        aliveMafia: 0,
+        aliveCivilians: 0,
+        aliveInvestigator: 0,
+        advancingPlayers: [],
+        createdAt: new Date().toISOString(),
+        round1QuestionSetId: null,
+        currentNightQuizId: null,
+        investigatorResult: null,
+        morningResults: [],
+        tieRule: 'NO_ELIMINATION',
+        mafiaSelectionRule: 'KILL_ALL',
+      });
+    }
+    return this.teams.get(teamId)!;
+  }
+
   getOrCreateTeam(teamId: string, roomCode: string): Team {
     if (!this.teams.has(teamId)) {
       this.teams.set(teamId, {
@@ -48,21 +79,33 @@ export class GameManager {
     teamId: string,
     roomCode: string,
     playerId: string,
-    playerName: string
+    playerName: string,
+    playerSessionId?: string
   ): { success: boolean; message?: string } {
-    let team = this.teams.get(teamId);
+    if (!teamId || typeof teamId !== 'string' || !roomCode || typeof roomCode !== 'string') {
+      return { success: false, message: 'Invalid team or room code' };
+    }
 
+    const team = this.teams.get(teamId);
     if (!team) {
-      team = this.getOrCreateTeam(teamId, roomCode);
+      return { success: false, message: 'Team not found' };
     }
 
     if (team.roomCode !== roomCode) {
       return { success: false, message: 'Invalid room code' };
     }
 
+    if (!playerName || typeof playerName !== 'string' || playerName.trim().length === 0 || playerName.length > 20) {
+      return { success: false, message: 'Invalid player name' };
+    }
+    const trimmedName = playerName.trim();
+
     // Allow reconnect if player exists by name
-    const existing = team.players.find((p) => p.name === playerName);
+    const existing = team.players.find((p) => p.name === trimmedName);
     if (existing) {
+      if (existing.sessionId && existing.sessionId !== playerSessionId) {
+        return { success: false, message: 'Name already in use' };
+      }
       existing.id = playerId;
       return { success: true };
     }
@@ -77,9 +120,10 @@ export class GameManager {
 
     team.players.push({
       id: playerId,
-      name: playerName,
+      name: trimmedName,
       role: null,
       status: 'ALIVE',
+      sessionId: playerSessionId,
     });
 
     if (team.players.length === 8) {
@@ -242,6 +286,10 @@ export class GameManager {
   evaluateVotes(teamId: string): Team | null {
     const team = this.teams.get(teamId);
     if (!team) return null;
+
+    if (team.currentState !== 'ROUND_1_VOTING' && team.currentState !== 'ROUND_2_VOTING') {
+      return null;
+    }
 
     if (team.currentRound === 1) {
       team.currentState = 'ROUND_1_RESULT';
@@ -471,7 +519,7 @@ export class GameManager {
 
   checkWinCondition(teamId: string): Team | null {
     const team = this.teams.get(teamId);
-    if (!team) return null;
+    if (!team || team.currentState === 'GAME_COMPLETE') return team || null;
 
     const alive = team.players.filter((p) => p.status === 'ALIVE');
     const mafiaAlive = alive.filter((p) => p.role === 'MAFIA').length;
@@ -581,6 +629,10 @@ export class GameManager {
           ? team.players.map((p) => ({ id: p.id, name: p.name, role: p.role }))
           : null,
     };
+  }
+
+  loadTeamFromState(teamId: string, state: Team): void {
+    this.teams.set(teamId, state);
   }
 }
 

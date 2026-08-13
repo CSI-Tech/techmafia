@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import type { AdminTeam, GameLogEntry } from '@/types';
+import type { AdminTeam, GameLogEntry, Role, AdminPlayer } from '@/types';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { PlayerTable } from '@/components/admin/PlayerTable';
 import { RoundHistory } from '@/components/admin/RoundHistory';
@@ -102,9 +102,9 @@ export default function TeamDetail() {
   const advancingNames = team.advancingPlayerNames || (live?.advancingPlayers ? live.players.filter(p => live.advancingPlayers.includes(p.id || '')).map(p => p.name) : []);
 
   // Compute final player outcomes
-  const finalPlayers = (team.playerRoles || live?.players || []).map((p: { name: string; role: string }) => {
-    const name = p.name;
-    const role = p.role;
+  const finalPlayers = (team.playerRoles || live?.players || []).map((p: any) => {
+    const name = p.name as string;
+    const role = p.role as Role;
     const isAdvanced = advancingNames.includes(name);
     return { name, role, isAdvanced };
   });
@@ -113,11 +113,11 @@ export default function TeamDetail() {
   // and fall back to the DB record only for completed games with no live state.
   const elimHistory = (live?.players
     ? live.players
-        .filter((p: { status: string }) => p.status === 'DEAD')
-        .map((p: { name: string; role: string; eliminatedRound?: number; eliminatedCause?: string }) => ({
+        .filter((p: AdminPlayer) => p.status === 'DEAD')
+        .map((p: AdminPlayer) => ({
           round: p.eliminatedRound || 1,
           playerName: p.name,
-          role: p.role,
+          role: p.role || 'UNKNOWN',
           cause: p.eliminatedCause || 'UNKNOWN',
         }))
         .sort((a: { round: number }, b: { round: number }) => a.round - b.round)
@@ -299,7 +299,7 @@ export default function TeamDetail() {
               <div className="bg-white p-6 rounded-xl border border-red-150 space-y-4 shadow-sm">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Players Moving Forward</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {finalPlayers.map((p, idx) => (
+                  {finalPlayers.map((p: { name: string; role: Role; isAdvanced: boolean }, idx: number) => (
                     <div key={idx} className={`p-3 rounded-lg border flex justify-between items-center ${p.isAdvanced ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                       <div>
                         <span className="font-bold text-gray-800 text-sm block">{p.name}</span>

@@ -10,7 +10,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ team
       return NextResponse.json({ success: false, message: 'Team not found' }, { status: 404 });
     }
 
-    const live = gameManager.getTeam(teamId);
+    const live = gameManager.getTeam(teamId) || room.liveState;
 
     return NextResponse.json({
       success: true,
@@ -21,7 +21,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ team
               currentState: live.currentState,
               currentRound: live.currentRound,
               timerEndsAt: live.timerEndsAt,
-              players: live.players.map((p) => ({
+              players: live.players.map((p: any) => ({
                 name: p.name,
                 role: p.role,
                 status: p.status,
@@ -29,7 +29,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ team
                 eliminatedCause: p.eliminatedCause,
                 nightQuizAnswered: p.nightQuizAnswered,
                 nightActionTarget: p.nightActionTarget,
-                targetPlayerName: live.players.find(tp => tp.id === p.nightActionTarget)?.name || null,
+                targetPlayerName: live.players.find((tp: any) => tp.id === p.nightActionTarget)?.name || null,
               })),
               votes: live.votes,
               voteTally: live.voteTally,

@@ -64,10 +64,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   const joinRoom = (teamId: string, roomCode: string, playerName: string) => {
+    let playerSessionId = sessionStorage.getItem('techmafia_playerSessionId');
+    if (!playerSessionId) {
+      playerSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      sessionStorage.setItem('techmafia_playerSessionId', playerSessionId);
+    }
     sessionStorage.setItem('techmafia_playerName', playerName);
     sessionStorage.setItem('techmafia_teamId', teamId);
     sessionStorage.setItem('techmafia_roomCode', roomCode);
-    socket?.emit('joinRoom', { teamId, roomCode, playerName });
+    socket?.emit('joinRoom', { teamId, roomCode, playerName, playerSessionId });
   };
 
   const startGame = () => {

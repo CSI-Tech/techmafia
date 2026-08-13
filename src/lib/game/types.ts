@@ -7,6 +7,7 @@ export interface Player {
   status: PlayerStatus;
   eliminatedRound?: number;
   eliminatedCause?: 'VOTED_OUT' | 'MAFIA_KILL' | 'INVESTIGATOR_REVEAL' | 'OTHER';
+  sessionId?: string;
   
   // Game flow details
   round1Answered?: boolean;

@@ -7,7 +7,7 @@ export async function GET() {
     const rooms = await getRooms();
 
     const teamsWithLive = rooms.map((room) => {
-      const live = gameManager.getTeam(room.teamId);
+      const live = gameManager.getTeam(room.teamId) || room.liveState;
       return {
         ...room,
         live: live
@@ -16,9 +16,9 @@ export async function GET() {
               currentRound: live.currentRound,
               timerEndsAt: live.timerEndsAt,
               playerCount: live.players.length,
-              aliveCount: live.players.filter((p) => p.status === 'ALIVE').length,
-              deadCount: live.players.filter((p) => p.status === 'DEAD').length,
-              players: live.players.map((p) => ({
+              aliveCount: live.players.filter((p: any) => p.status === 'ALIVE').length,
+              deadCount: live.players.filter((p: any) => p.status === 'DEAD').length,
+              players: live.players.map((p: any) => ({
                 name: p.name,
                 role: p.role,
                 status: p.status,

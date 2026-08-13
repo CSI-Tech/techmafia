@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { NextResponse } from 'next/server';
-import { getRoom, createRoom } from '@/lib/db/dbHelper';
+import { getRoom, createRoom, saveTeamLiveState } from '@/lib/db/dbHelper';
 import { generateUniqueRoomCode } from '@/lib/utils/roomCode';
 import { gameManager } from '@/lib/game/GameManager';
 
@@ -28,7 +28,8 @@ export async function POST(request: Request) {
       status: 'WAITING',
     });
 
-    gameManager.getOrCreateTeam(teamId, roomCode);
+    const team = gameManager.getOrCreateTeam(teamId, roomCode);
+    await saveTeamLiveState(teamId, team);
 
     // Broadcast team creation to all active admin clients
     const globalForSockets = global as unknown as { adminNs?: any };

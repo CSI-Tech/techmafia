@@ -115,6 +115,7 @@ export type AdminTeam = {
   playerNames: string[];
   eliminationHistory: { round: number; playerName: string; role: string }[];
   advancingPlayerNames: string[];
+  playerRoles?: { name: string; role: string }[];
   live: AdminTeamUpdate | null;
 };
 

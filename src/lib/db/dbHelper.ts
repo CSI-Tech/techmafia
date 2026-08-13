@@ -18,38 +18,23 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export async function getRooms(filter: any = {}): Promise<any[]> {
-  if (mongoose.connection.readyState === 1) {
-    try {
-      return await GameRoom.find(filter).sort({ createdAt: -1 }).lean();
-    } catch (e) {
-      console.error('[DBHelper] MongoDB read failed, using memory:', e);
-    }
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error('MongoDB connection is not active');
   }
-  let list = Array.from(globalMemoryRooms.values());
-  if (filter.status) {
-    list = list.filter(r => r.status === filter.status);
-  }
-  if (filter.roomCode) {
-    list = list.filter(r => r.roomCode === filter.roomCode);
-  }
-  if (filter.teamId) {
-    list = list.filter(r => r.teamId === filter.teamId);
-  }
-  return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return await GameRoom.find(filter).sort({ createdAt: -1 }).lean();
 }
 
 export async function getRoom(teamId: string): Promise<any | null> {
-  if (mongoose.connection.readyState === 1) {
-    try {
-      return await GameRoom.findOne({ teamId }).lean();
-    } catch (e) {
-      console.error('[DBHelper] MongoDB findOne failed, using memory:', e);
-    }
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error('MongoDB connection is not active');
   }
-  return globalMemoryRooms.get(teamId) || null;
+  return await GameRoom.findOne({ teamId }).lean();
 }
 
 export async function createRoom(data: any): Promise<any> {
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error('MongoDB connection is not active');
+  }
   const roomData = {
     ...data,
     createdAt: new Date(),
@@ -59,77 +44,39 @@ export async function createRoom(data: any): Promise<any> {
     advancingPlayerNames: data.advancingPlayerNames || [],
     playerRoles: data.playerRoles || [],
   };
-
-  if (mongoose.connection.readyState === 1) {
-    try {
-      return await GameRoom.create(roomData);
-    } catch (e) {
-      console.error('[DBHelper] MongoDB create failed, using memory:', e);
-    }
-  }
-  globalMemoryRooms.set(data.teamId, roomData);
-  return roomData;
+  return await GameRoom.create(roomData);
 }
 
 export async function updateRoom(teamId: string, update: any): Promise<void> {
-  if (mongoose.connection.readyState === 1) {
-    try {
-      await GameRoom.updateOne({ teamId }, { $set: update });
-      return;
-    } catch (e) {
-      console.error('[DBHelper] MongoDB updateOne failed, using memory:', e);
-    }
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error('MongoDB connection is not active');
   }
-  const existing = globalMemoryRooms.get(teamId) || {};
-  globalMemoryRooms.set(teamId, { 
-    ...existing, 
-    ...update, 
-    completedAt: update.completedAt || existing.completedAt 
-  });
+  await GameRoom.updateOne({ teamId }, { $set: update });
 }
 
 export async function getLogs(filter: any = {}): Promise<any[]> {
-  if (mongoose.connection.readyState === 1) {
-    try {
-      // If round is passed, convert to number
-      const mongoFilter: any = { ...filter };
-      if (mongoFilter.round) mongoFilter.round = Number(mongoFilter.round);
-      return await GameLog.find(mongoFilter).sort({ timestamp: -1 }).limit(500).lean();
-    } catch (e) {
-      console.error('[DBHelper] MongoDB log read failed, using memory:', e);
-    }
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error('MongoDB connection is not active');
   }
-  let list = [...globalMemoryLogs];
-  if (filter.teamId) {
-    const tid = typeof filter.teamId === 'object' && filter.teamId.$regex ? filter.teamId.$regex : filter.teamId;
-    list = list.filter(l => l.teamId.toLowerCase().includes(tid.toLowerCase()));
-  }
-  if (filter.roomCode) {
-    const rc = typeof filter.roomCode === 'object' && filter.roomCode.$regex ? filter.roomCode.$regex : filter.roomCode;
-    list = list.filter(l => l.roomCode.toLowerCase().includes(rc.toLowerCase()));
-  }
-  if (filter.round) {
-    list = list.filter(l => l.round === Number(filter.round));
-  }
-  if (filter.event) {
-    const ev = typeof filter.event === 'object' && filter.event.$regex ? filter.event.$regex : filter.event;
-    list = list.filter(l => l.event.toLowerCase().includes(ev.toLowerCase()));
-  }
-  return list.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 500);
+  const mongoFilter: any = { ...filter };
+  if (mongoFilter.round) mongoFilter.round = Number(mongoFilter.round);
+  return await GameLog.find(mongoFilter).sort({ timestamp: -1 }).limit(500).lean();
 }
 
 export async function createLog(data: any): Promise<void> {
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error('MongoDB connection is not active');
+  }
   const logData = {
     ...data,
     timestamp: new Date(),
   };
-  if (mongoose.connection.readyState === 1) {
-    try {
-      await GameLog.create(logData);
-      return;
-    } catch (e) {
-      console.error('[DBHelper] MongoDB log create failed, using memory:', e);
-    }
+  await GameLog.create(logData);
+}
+
+export async function saveTeamLiveState(teamId: string, teamState: any): Promise<void> {
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error('MongoDB connection is not active');
   }
-  globalMemoryLogs.push(logData);
+  await GameRoom.updateOne({ teamId }, { $set: { liveState: teamState } });
 }

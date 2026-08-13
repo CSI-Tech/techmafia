@@ -19,6 +19,7 @@ export interface IGameRoom extends Document {
   eliminationHistory: IEliminationEntry[];
   advancingPlayerNames: string[];
   playerRoles?: { name: string; role: string }[];
+  liveState?: any;
 }
 
 const EliminationEntrySchema = new Schema<IEliminationEntry>({
@@ -40,6 +41,7 @@ const GameRoomSchema = new Schema<IGameRoom>({
   eliminationHistory: [EliminationEntrySchema],
   advancingPlayerNames: [{ type: String }],
   playerRoles: [{ name: { type: String }, role: { type: String } }],
+  liveState: { type: Schema.Types.Mixed, default: null },
 });
 
 export const GameRoom: Model<IGameRoom> =
