@@ -29,9 +29,7 @@ export default function GameLogs() {
       if (playerFilter) query.append('player', playerFilter);
       if (dateFilter) query.append('date', dateFilter);
 
-      const res = await fetch(`/api/admin/logs?${query.toString()}`, {
-        headers: { 'x-admin-auth': 'true' }
-      });
+      const res = await fetch(`/api/admin/logs?${query.toString()}`);
       const data = await res.json();
       if (data.success) {
         setLogs(data.logs);

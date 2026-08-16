@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 export default function GenerateTeam() {
   const { refreshTeams, liveTeams, teams } = useAdminSocket();
   const [teamNumber, setTeamNumber] = useState('');
+  const [maxPlayers, setMaxPlayers] = useState(8);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ teamId: string; roomCode: string; error?: string } | null>(null);
 
@@ -21,9 +22,8 @@ export default function GenerateTeam() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-auth': 'true'
         },
-        body: JSON.stringify({ teamNumber })
+        body: JSON.stringify({ teamNumber, maxPlayers })
       });
       
       const data = await res.json();
@@ -43,11 +43,12 @@ export default function GenerateTeam() {
   };
 
   const getLiveStats = () => {
-    if (!result || !result.teamId) return { count: 0, status: 'WAITING' };
+    if (!result || !result.teamId) return { count: 0, maxPlayers: 8, status: 'WAITING' };
     const liveTeam = liveTeams[result.teamId];
     const dbTeam = teams.find(t => t.teamId === result.teamId);
     return {
       count: liveTeam ? liveTeam.players.length : (dbTeam ? dbTeam.playerNames.length : 0),
+      maxPlayers: liveTeam ? (liveTeam.maxPlayers || 8) : (dbTeam ? (dbTeam.maxPlayers || 8) : 8),
       status: liveTeam ? liveTeam.currentState : (dbTeam ? dbTeam.status : 'WAITING')
     };
   };
@@ -73,6 +74,21 @@ export default function GenerateTeam() {
                 className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 focus:outline-none focus:border-primary focus:bg-white transition-colors uppercase"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 uppercase tracking-wide mb-2">
+                Number of Players
+              </label>
+              <select
+                value={maxPlayers}
+                onChange={(e) => setMaxPlayers(Number(e.target.value))}
+                className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+              >
+                <option value={6}>6 Players</option>
+                <option value={7}>7 Players</option>
+                <option value={8}>8 Players</option>
+              </select>
+            </div>
             
             <Button 
               type="submit" 
@@ -86,7 +102,7 @@ export default function GenerateTeam() {
           {result && !result.error && (
             <div className="mt-10 p-6 bg-red-50 rounded-xl border border-red-100 animate-fade-in text-center">
               <h3 className="text-xl font-bold text-primary mb-2">{result.teamId}</h3>
-              <p className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wider">Room Code</p>
+              <p className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wider">Login Code</p>
               
               <div className="bg-white border-2 border-primary rounded-xl py-4 px-8 inline-block mb-6 shadow-sm">
                 <span className="text-4xl font-black text-gray-900 tracking-[0.2em] font-mono">
@@ -95,13 +111,13 @@ export default function GenerateTeam() {
               </div>
               
               <p className="text-sm text-gray-600 font-medium mb-6">
-                {"Give this Team Number and Room Code to the players."}
+                {"Give this Login Code to the players."}
               </p>
 
               <div className="flex justify-center gap-8 mb-6 bg-white p-4 rounded-xl border border-gray-150 w-fit mx-auto px-8 text-left">
                 <div>
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Players</span>
-                  <span className="text-lg font-extrabold text-gray-800">{stats.count} / 8</span>
+                  <span className="text-lg font-extrabold text-gray-800">{stats.count} / {stats.maxPlayers}</span>
                 </div>
                 <div className="border-l border-gray-200" />
                 <div>

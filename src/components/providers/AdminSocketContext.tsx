@@ -2,10 +2,9 @@
 /* eslint-disable */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { AdminTeam, AdminTeamUpdate } from '@/types';
+import type { AdminTeam, AdminTeamUpdate, RoomStatus, Role } from '@/types';
 
 const BACKEND = '';
-const ADMIN_HEADER = { 'x-admin-auth': 'true' } as const;
 
 interface AdminSocketContextProps {
   connected: boolean;
@@ -23,7 +22,7 @@ export const AdminSocketProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const refreshTeams = async () => {
     try {
-      const res = await fetch(`${BACKEND}/api/admin/teams`, { headers: ADMIN_HEADER });
+      const res = await fetch(`${BACKEND}/api/admin/teams`);
       const data: { success: boolean; teams: AdminTeam[] } = await res.json();
       if (data.success) setTeams(data.teams);
     } catch {
@@ -73,31 +72,17 @@ export const AdminSocketProvider: React.FC<{ children: React.ReactNode }> = ({ c
       teamId: liveUpdate.teamId,
       roomCode: liveUpdate.roomCode,
       teamNumber: liveUpdate.teamId, // fallback
-      status: liveUpdate.currentState === 'GAME_COMPLETE' 
+      status: (liveUpdate.currentState === 'GAME_COMPLETE' 
         ? 'COMPLETED' 
-        : (liveUpdate.currentState === 'WAITING_FOR_PLAYERS' ? 'WAITING' : 'IN_PROGRESS'),
+        : (liveUpdate.currentState === 'WAITING_FOR_PLAYERS' ? 'WAITING' : 'IN_PROGRESS')) as RoomStatus,
       winner: liveUpdate.winner,
       rounds: liveUpdate.currentRound,
       playerNames: liveUpdate.players.map((p) => p.name),
       createdAt: new Date().toISOString(), // fallback
       live: {
-        currentState: liveUpdate.currentState,
-        currentRound: liveUpdate.currentRound,
-        timerEndsAt: liveUpdate.timerEndsAt,
+        ...liveUpdate,
         playerCount: liveUpdate.players.length,
-        aliveCount: liveUpdate.players.filter((p) => p.status === 'ALIVE').length,
-        deadCount: liveUpdate.players.filter((p) => p.status === 'DEAD').length,
-        players: liveUpdate.players.map((p) => ({
-          name: p.name,
-          role: p.role,
-          status: p.status,
-          eliminatedRound: p.eliminatedRound,
-          eliminatedCause: p.eliminatedCause,
-          nightQuizAnswered: p.nightQuizAnswered,
-          nightActionTarget: p.nightActionTarget,
-          targetPlayerName: p.targetPlayerName,
-        })),
-      },
+      } as any,
     };
 
     if (existingIdx >= 0) {

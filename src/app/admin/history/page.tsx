@@ -13,9 +13,7 @@ export default function GameHistory() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch('/api/admin/history', {
-          headers: { 'x-admin-auth': 'true' }
-        });
+        const res = await fetch('/api/admin/history');
         const data = await res.json();
         if (data.success) {
           setHistory(data.history);

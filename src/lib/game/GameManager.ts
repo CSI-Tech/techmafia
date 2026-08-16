@@ -2,14 +2,57 @@ import { Team } from './types';
 import { PublicPlayer } from '@/types';
 import { loadRound1Questions, loadNightQuizzes } from './content';
 
+export function getRoleCountsForTeamSize(maxPlayers: number): { mafia: number; investigator: number; civilian: number } {
+  if (maxPlayers <= 6) {
+    return { mafia: 1, investigator: 1, civilian: Math.max(0, maxPlayers - 2) };
+  } else if (maxPlayers === 7) {
+    return { mafia: 2, investigator: 1, civilian: 4 };
+  } else {
+    return { mafia: 2, investigator: 1, civilian: Math.max(0, maxPlayers - 3) };
+  }
+}
+
 export class GameManager {
   private teams: Map<string, Team> = new Map();
 
-  getOrCreateTeam(teamId: string, roomCode: string): Team {
+  initializeTeam(teamId: string, roomCode: string, status?: string, maxPlayers: number = 8): Team {
     if (!this.teams.has(teamId)) {
       this.teams.set(teamId, {
         teamId,
         roomCode,
+        maxPlayers,
+        players: [],
+        currentState: status === 'READY' ? 'READY' : (status === 'IN_PROGRESS' ? 'ROUND_1_QUESTION' : 'WAITING_FOR_PLAYERS'),
+        currentRound: 1,
+        timerEndsAt: null,
+        votes: {},
+        eliminatedThisRound: null,
+        eliminatedRoleThisRound: null,
+        voteTally: [],
+        winner: null,
+        alivePlayers: 0,
+        aliveMafia: 0,
+        aliveCivilians: 0,
+        aliveInvestigator: 0,
+        advancingPlayers: [],
+        createdAt: new Date().toISOString(),
+        round1QuestionSetId: null,
+        currentNightQuizId: null,
+        investigatorResult: null,
+        morningResults: [],
+        tieRule: 'NO_ELIMINATION',
+        mafiaSelectionRule: 'KILL_ALL',
+      });
+    }
+    return this.teams.get(teamId)!;
+  }
+
+  getOrCreateTeam(teamId: string, roomCode: string, maxPlayers: number = 8): Team {
+    if (!this.teams.has(teamId)) {
+      this.teams.set(teamId, {
+        teamId,
+        roomCode,
+        maxPlayers,
         players: [],
         currentState: 'WAITING_FOR_PLAYERS',
         currentRound: 1,
@@ -46,23 +89,30 @@ export class GameManager {
 
   joinTeam(
     teamId: string,
-    roomCode: string,
     playerId: string,
-    playerName: string
+    playerName: string,
+    playerSessionId?: string
   ): { success: boolean; message?: string } {
-    let team = this.teams.get(teamId);
+    if (!teamId || typeof teamId !== 'string') {
+      return { success: false, message: 'Invalid login code' };
+    }
 
+    const team = this.teams.get(teamId);
     if (!team) {
-      team = this.getOrCreateTeam(teamId, roomCode);
+      return { success: false, message: 'Invalid login code' };
     }
 
-    if (team.roomCode !== roomCode) {
-      return { success: false, message: 'Invalid room code' };
+    if (!playerName || typeof playerName !== 'string' || playerName.trim().length === 0 || playerName.length > 20) {
+      return { success: false, message: 'Invalid player name' };
     }
+    const trimmedName = playerName.trim();
 
     // Allow reconnect if player exists by name
-    const existing = team.players.find((p) => p.name === playerName);
+    const existing = team.players.find((p) => p.name === trimmedName);
     if (existing) {
+      if (existing.sessionId && existing.sessionId !== playerSessionId) {
+        return { success: false, message: 'Name already in use' };
+      }
       existing.id = playerId;
       return { success: true };
     }
@@ -71,18 +121,20 @@ export class GameManager {
       return { success: false, message: 'Game already started' };
     }
 
-    if (team.players.length >= 8) {
+    const maxP = team.maxPlayers || 8;
+    if (team.players.length >= maxP) {
       return { success: false, message: 'Room is full' };
     }
 
     team.players.push({
       id: playerId,
-      name: playerName,
+      name: trimmedName,
       role: null,
       status: 'ALIVE',
+      sessionId: playerSessionId,
     });
 
-    if (team.players.length === 8) {
+    if (team.players.length >= maxP) {
       team.currentState = 'READY';
     }
 
@@ -91,7 +143,8 @@ export class GameManager {
 
   startGame(teamId: string): boolean {
     const team = this.teams.get(teamId);
-    if (!team || team.players.length !== 8 || team.currentState !== 'READY') return false;
+    const maxP = team?.maxPlayers || 8;
+    if (!team || team.players.length !== maxP || team.currentState !== 'READY') return false;
 
     this.assignRoles(team);
     this.startRound1Question(teamId);
@@ -100,22 +153,25 @@ export class GameManager {
   }
 
   private assignRoles(team: Team) {
-    const indices = [0, 1, 2, 3, 4, 5, 6, 7];
+    const maxP = team.maxPlayers || 8;
+    const counts = getRoleCountsForTeamSize(maxP);
+    const indices = team.players.map((_, i) => i);
     // Shuffle
     for (let i = indices.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
 
-    // Assign roles: 2 Mafia, 1 Investigator, 5 Civilians
-    team.players[indices[0]].role = 'MAFIA';
-    team.players[indices[1]].role = 'MAFIA';
-    team.players[indices[2]].role = 'INVESTIGATOR';
-    
-    for (let i = 3; i < 8; i++) {
-      team.players[indices[i]].role = 'CIVILIAN';
+    let ptr = 0;
+    for (let i = 0; i < counts.mafia && ptr < indices.length; i++) {
+      team.players[indices[ptr++]].role = 'MAFIA';
     }
-
+    for (let i = 0; i < counts.investigator && ptr < indices.length; i++) {
+      team.players[indices[ptr++]].role = 'INVESTIGATOR';
+    }
+    while (ptr < indices.length) {
+      team.players[indices[ptr++]].role = 'CIVILIAN';
+    }
   }
 
   startRound1Question(teamId: string): Team | null {
@@ -124,6 +180,7 @@ export class GameManager {
 
     team.currentState = 'ROUND_1_QUESTION';
     team.currentRound = 1;
+    team.timerEndsAt = Date.now() + 120000; // Exactly 2 minutes
     
     // Select random Round 1 question set
     const questionSets = loadRound1Questions();
@@ -152,11 +209,14 @@ export class GameManager {
     const currentSet = questionSets.find(q => q.id === team.round1QuestionSetId);
     if (!currentSet) return { success: false, correct: false };
 
+    const cleanUserAns = (answer || '').trim().toLowerCase();
     let isCorrect = false;
     if (player.role === 'MAFIA') {
-      isCorrect = currentSet.mafia.answer.toLowerCase() === answer.toLowerCase();
+      const cleanTarget = (currentSet.mafia.answer || '').trim().toLowerCase();
+      isCorrect = cleanTarget === cleanUserAns;
     } else {
-      isCorrect = currentSet.civilian.answer.toLowerCase() === answer.toLowerCase();
+      const cleanTarget = (currentSet.civilian.answer || '').trim().toLowerCase();
+      isCorrect = cleanTarget === cleanUserAns;
     }
 
     player.round1Answered = true;
@@ -242,6 +302,10 @@ export class GameManager {
   evaluateVotes(teamId: string): Team | null {
     const team = this.teams.get(teamId);
     if (!team) return null;
+
+    if (team.currentState !== 'ROUND_1_VOTING' && team.currentState !== 'ROUND_2_VOTING') {
+      return null;
+    }
 
     if (team.currentRound === 1) {
       team.currentState = 'ROUND_1_RESULT';
@@ -471,7 +535,7 @@ export class GameManager {
 
   checkWinCondition(teamId: string): Team | null {
     const team = this.teams.get(teamId);
-    if (!team) return null;
+    if (!team || team.currentState === 'GAME_COMPLETE') return team || null;
 
     const alive = team.players.filter((p) => p.status === 'ALIVE');
     const mafiaAlive = alive.filter((p) => p.role === 'MAFIA').length;
@@ -553,6 +617,7 @@ export class GameManager {
     return {
       teamId: team.teamId,
       roomCode: team.roomCode,
+      maxPlayers: team.maxPlayers || 8,
       currentState: team.currentState,
       currentRound: team.currentRound,
       timerEndsAt: team.timerEndsAt,
@@ -582,8 +647,12 @@ export class GameManager {
           : null,
     };
   }
+
+  loadTeamFromState(teamId: string, state: Team): void {
+    this.teams.set(teamId, state);
+  }
 }
 
 const globalForGame = global as unknown as { gameManager?: GameManager };
 export const gameManager = globalForGame.gameManager ?? new GameManager();
-if (process.env.NODE_ENV !== 'production') globalForGame.gameManager = gameManager;
+globalForGame.gameManager = gameManager;

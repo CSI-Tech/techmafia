@@ -32,7 +32,7 @@ import { GameResult } from '@/components/player/GameResult';
  * GAME_COMPLETE                → GameResult
  */
 export default function PlayerPortal() {
-  const { gameState, connected } = useSocket();
+  const { gameState, connected, error } = useSocket();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
@@ -44,8 +44,7 @@ export default function PlayerPortal() {
     if (!mounted) return;
     const playerName = sessionStorage.getItem('techmafia_playerName');
     const teamId = sessionStorage.getItem('techmafia_teamId');
-    const roomCode = sessionStorage.getItem('techmafia_roomCode');
-    if (!gameState && (!playerName || !teamId || !roomCode)) {
+    if (!gameState && (!playerName || !teamId)) {
       router.replace('/');
     }
   }, [gameState, router, mounted]);
@@ -53,12 +52,26 @@ export default function PlayerPortal() {
   if (!mounted || !gameState) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-        <div className="text-center text-gray-400">
+        <div className="text-center text-gray-400 max-w-xs w-full">
           <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
             <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
           </div>
-          <p className="font-semibold text-gray-600">{!mounted ? "Loading..." : "Reconnecting..."}</p>
+          <p className="font-semibold text-gray-600">{!mounted ? "Loading..." : "Connecting..."}</p>
           <p className="text-sm mt-1">{!mounted ? "Initializing..." : "Establishing connection to the game room"}</p>
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-semibold">
+              <p>{error}</p>
+              <button
+                onClick={() => {
+                  sessionStorage.clear();
+                  router.replace('/');
+                }}
+                className="mt-2 text-xs font-bold text-red-700 underline"
+              >
+                Back to Home
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );

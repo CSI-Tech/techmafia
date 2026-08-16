@@ -101,7 +101,9 @@ export function NightPhase() {
           )}
 
           <div className="space-y-3 flex-1">
-            {alivePlayers.map(p => {
+            {alivePlayers
+              .filter(p => p.name !== gameState.myMafiaPartner)
+              .map(p => {
               const isSelected = selectedTarget === p.id;
               return (
                 <button
@@ -223,7 +225,7 @@ export function NightPhase() {
               <p className="text-white font-bold text-base leading-snug">{quiz.question}</p>
             </div>
             <div className="space-y-3 flex-1">
-              {quiz.options.map((opt, i) => {
+              {quiz.options?.map((opt, i) => {
                 const letter = ['A', 'B', 'C', 'D'][i];
                 const isSelected = selectedAnswer === opt;
                 return (

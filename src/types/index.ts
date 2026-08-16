@@ -30,14 +30,16 @@ export type VoteTally = {
 };
 
 export type QuestionData = {
+  type?: 'MULTIPLE_CHOICE' | 'TYPE_ANSWER';
   question: string;
-  options: string[];
+  options?: string[];
   answer: string;
 };
 
 export type SanitizedGameState = {
   teamId: string;
   roomCode: string;
+  maxPlayers: number;
   currentState: GameState;
   currentRound: number;
   timerEndsAt: number | null;
@@ -89,6 +91,8 @@ export type AdminPlayer = {
 export type AdminTeamUpdate = {
   teamId: string;
   roomCode: string;
+  loginCode?: string;
+  maxPlayers?: number;
   currentState: GameState;
   currentRound: number;
   timerEndsAt: number | null;
@@ -106,7 +110,9 @@ export type AdminTeam = {
   _id: string;
   teamId: string;
   roomCode: string;
+  loginCode?: string;
   teamNumber: string;
+  maxPlayers?: number;
   status: RoomStatus;
   createdAt: string;
   completedAt?: string;
@@ -115,6 +121,7 @@ export type AdminTeam = {
   playerNames: string[];
   eliminationHistory: { round: number; playerName: string; role: string }[];
   advancingPlayerNames: string[];
+  playerRoles?: { name: string; role: string }[];
   live: AdminTeamUpdate | null;
 };
 

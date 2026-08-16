@@ -89,7 +89,7 @@ export function TeamCard({ team }: TeamCardProps) {
             <div className="flex justify-between items-center">
               <span className="text-sm font-semibold text-gray-500">Players</span>
               <span className="text-sm font-bold text-gray-900">
-                {live.players.length} / 8
+                {live.players.length} / {live.maxPlayers || 8}
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -114,7 +114,7 @@ export function TeamCard({ team }: TeamCardProps) {
              <div className="flex justify-between items-center">
               <span className="text-sm font-semibold text-gray-500">Players</span>
               <span className="text-sm font-bold text-gray-900">
-                {team.playerNames.length} / 8
+                {team.playerNames.length} / {team.maxPlayers || 8}
               </span>
             </div>
             <div className="flex justify-between items-center">

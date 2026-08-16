@@ -1,19 +1,21 @@
-/* eslint-disable */
 import { NextResponse } from 'next/server';
-import { getRoom, createRoom } from '@/lib/db/dbHelper';
+import { getRoom, createRoom, saveTeamLiveState } from '@/lib/db/dbHelper';
 import { generateUniqueRoomCode } from '@/lib/utils/roomCode';
 import { gameManager } from '@/lib/game/GameManager';
+import { logEvent } from '@/lib/services/GameLogger';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { teamNumber } = body;
+    const { teamNumber, maxPlayers: rawMaxPlayers } = body;
 
     if (!teamNumber?.trim()) {
       return NextResponse.json({ success: false, message: 'teamNumber is required' }, { status: 400 });
     }
 
+    const maxPlayers = [6, 7, 8].includes(Number(rawMaxPlayers)) ? Number(rawMaxPlayers) : 8;
     const roomCode = await generateUniqueRoomCode();
+    const loginCode = roomCode;
     const teamId = teamNumber.trim().toUpperCase().replace(/\s+/g, '');
 
     const existing = await getRoom(teamId);
@@ -24,11 +26,16 @@ export async function POST(request: Request) {
     const room = await createRoom({
       teamId,
       roomCode,
+      loginCode,
       teamNumber: teamNumber.trim(),
+      maxPlayers,
       status: 'WAITING',
     });
 
-    gameManager.getOrCreateTeam(teamId, roomCode);
+    await logEvent(teamId, roomCode, 0, 'Team created', `Team ${teamNumber.trim()} room generated (${maxPlayers} players)`);
+
+    const team = gameManager.getOrCreateTeam(teamId, roomCode, maxPlayers);
+    await saveTeamLiveState(teamId, team);
 
     // Broadcast team creation to all active admin clients
     const globalForSockets = global as unknown as { adminNs?: any };
@@ -36,6 +43,8 @@ export async function POST(request: Request) {
       globalForSockets.adminNs.emit('adminTeamUpdate', {
         teamId,
         roomCode,
+        loginCode,
+        maxPlayers,
         currentState: 'WAITING_FOR_PLAYERS',
         currentRound: 1,
         timerEndsAt: null,
@@ -49,7 +58,7 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json({ success: true, teamId, roomCode, team: room });
+    return NextResponse.json({ success: true, teamId, roomCode, loginCode, maxPlayers, team: room });
   } catch (err) {
     console.error('[Admin] generate team error:', err);
     return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
