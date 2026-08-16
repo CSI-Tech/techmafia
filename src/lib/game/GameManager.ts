@@ -1,4 +1,4 @@
-import { Team } from './types';
+import { Team, Player } from './types';
 import { PublicPlayer } from '@/types';
 import { loadRound1Questions, loadNightQuizzes } from './content';
 
@@ -457,6 +457,33 @@ export class GameManager {
     }
   }
 
+  forceResolveNight(teamId: string) {
+    const team = this.teams.get(teamId);
+    if (!team || team.currentState !== 'NIGHT') return;
+    this.resolveNight(teamId);
+  }
+
+  private getFinalMafiaKillTarget(team: Team, mafiaPlayers: Player[]): string | null {
+    const targets = mafiaPlayers
+      .map(m => m.nightActionTarget)
+      .filter((t): t is string => t !== null && t !== undefined);
+
+    if (targets.length === 0) return null;
+    if (targets.length === 1) return targets[0];
+
+    // When 2 or more alive Mafia chose targets:
+    const allSame = targets.every(t => t === targets[0]);
+    if (allSame) return targets[0];
+
+    // If targets differ:
+    if (team.mafiaSelectionRule === 'AGREE_OR_NO_KILL') {
+      return null;
+    }
+
+    // Otherwise, pick ONE target (e.g. first target) so there is NEVER more than 1 Mafia kill per night
+    return targets[0];
+  }
+
   private resolveNight(teamId: string) {
     const team = this.teams.get(teamId);
     if (!team) return;
@@ -477,25 +504,22 @@ export class GameManager {
           deadThisNight.add(target.id);
           target.eliminatedCause = 'INVESTIGATOR_REVEAL';
           team.investigatorResult = `${target.name} is MAFIA.`;
-          successfulInvestigatorReveal = `${target.name} was a MAFIA revealed by the Investigator and has been eliminated.`;
+          successfulInvestigatorReveal = `${target.name} was revealed as MAFIA by the Investigator and was eliminated.`;
         } else {
           team.investigatorResult = `${target.name} is ${target.role}.`;
         }
       }
     }
 
-    // 2. Resolve Mafia kills
-    const mafiaTargets = mafiaPlayers
-      .map(m => m.nightActionTarget)
-      .filter((t): t is string => t !== null);
-
-    mafiaTargets.forEach(targetId => {
-      deadThisNight.add(targetId);
-      const target = team.players.find(p => p.id === targetId);
+    // 2. Resolve Mafia kills (EXACTLY ONE MAFIA KILL PER NIGHT)
+    const finalMafiaTargetId = this.getFinalMafiaKillTarget(team, mafiaPlayers);
+    if (finalMafiaTargetId) {
+      deadThisNight.add(finalMafiaTargetId);
+      const target = team.players.find(p => p.id === finalMafiaTargetId);
       if (target && !target.eliminatedCause) {
         target.eliminatedCause = 'MAFIA_KILL';
       }
-    });
+    }
 
     // 3. Apply deaths
     const morningResults: string[] = [];
@@ -515,7 +539,7 @@ export class GameManager {
             morningResults.push(`${player.name} was killed.`); // Generic fallback if investigator didn't do it
           }
         } else if (player.role === 'INVESTIGATOR') {
-          morningResults.push(`${player.name}, the Investigator, has been eliminated.`);
+          morningResults.push(`${player.name}, the Investigator, was killed by Mafia.`);
         } else {
           morningResults.push(`${player.name} was killed by Mafia.`);
         }
@@ -524,18 +548,18 @@ export class GameManager {
 
     // If no one died
     if (deadThisNight.size === 0) {
-      morningResults.push("No one was killed during the night.");
+      morningResults.push("No one was eliminated tonight.");
     }
 
     team.morningResults = morningResults;
     team.currentState = 'MORNING_RESULT';
     team.currentRound += 1;
 
-    // Check win condition
-    this.checkWinCondition(teamId);
+    // Check win condition without immediately overriding MORNING_RESULT state
+    this.checkWinCondition(teamId, false);
   }
 
-  checkWinCondition(teamId: string): Team | null {
+  checkWinCondition(teamId: string, setGameCompleteImmediate: boolean = true): Team | null {
     const team = this.teams.get(teamId);
     if (!team || team.currentState === 'GAME_COMPLETE') return team || null;
 
@@ -553,17 +577,17 @@ export class GameManager {
 
     if (mafiaAlive === 0) {
       team.winner = 'CIVILIANS';
-      team.currentState = 'GAME_COMPLETE';
+      if (setGameCompleteImmediate) team.currentState = 'GAME_COMPLETE';
       // ONLY CIVILIANS/INVESTIGATOR WHO ARE ALIVE AT THE END ADVANCE
       team.advancingPlayers = team.players
         .filter((p) => (p.role === 'CIVILIAN' || p.role === 'INVESTIGATOR') && p.status === 'ALIVE')
         .map((p) => p.id);
     } else if (mafiaAlive >= civilianSideAlive) {
       team.winner = 'MAFIA';
-      team.currentState = 'GAME_COMPLETE';
-      // BOTH MAFIA PLAYERS ADVANCE (ALIVE OR DEAD)
+      if (setGameCompleteImmediate) team.currentState = 'GAME_COMPLETE';
+      // ONLY MAFIA PLAYERS WHO ARE ALIVE AT THE END ADVANCE
       team.advancingPlayers = team.players
-        .filter((p) => p.role === 'MAFIA')
+        .filter((p) => p.role === 'MAFIA' && p.status === 'ALIVE')
         .map((p) => p.id);
     }
 
@@ -595,13 +619,18 @@ export class GameManager {
       voted: team.votes[p.id] !== undefined,
     }));
 
-    // Round 1 Question details (if applicable)
+    // Round 1 Question details (if applicable - strip correct answer)
     let myRound1Question = null;
     if (team.currentState === 'ROUND_1_QUESTION' && reqPlayer) {
       const questionSets = loadRound1Questions();
       const currentSet = questionSets.find(q => q.id === team.round1QuestionSetId);
       if (currentSet) {
-        myRound1Question = reqPlayer.role === 'MAFIA' ? currentSet.mafia : currentSet.civilian;
+        const fullQ = reqPlayer.role === 'MAFIA' ? currentSet.mafia : currentSet.civilian;
+        myRound1Question = {
+          question: fullQ.question,
+          options: fullQ.options,
+          type: fullQ.type,
+        };
       }
     }
 
