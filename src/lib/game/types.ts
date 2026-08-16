@@ -12,6 +12,7 @@ export interface Player {
   // Game flow details
   round1Answered?: boolean;
   round1AnswerCorrect?: boolean;
+  round1AnswerText?: string;
   nightQuizAnswered?: boolean;
   nightActionTarget?: string | null; // target player ID (for Mafia kill / Investigator check)
 }
