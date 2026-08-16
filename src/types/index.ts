@@ -64,6 +64,9 @@ export type SanitizedGameState = {
   myNightQuiz: QuestionData | null;
   investigatorResult: string | null;
 
+  // Round 1 Discussion answers (only populated during Round 1 Discussion)
+  round1Answers?: { playerId: string; playerName: string; answerText: string }[] | null;
+
   // Only populated at game end
   revealedRoles: { id: string; name: string; role: Role }[] | null;
 };

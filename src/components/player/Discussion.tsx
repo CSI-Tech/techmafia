@@ -31,9 +31,30 @@ export function Discussion() {
         )}
 
         {/* Large timer */}
-        <div className="flex-1 flex items-center justify-center py-8">
+        <div className="py-6 flex items-center justify-center">
           <Timer timerEndsAt={gameState.timerEndsAt} totalSeconds={90} size="lg" />
         </div>
+
+        {/* Answers section for Round 1 */}
+        {isRound1 && gameState.round1Answers && gameState.round1Answers.length > 0 && (
+          <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4 space-y-3">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">ANSWERS</p>
+            <div className="divide-y divide-gray-100">
+              {gameState.round1Answers.map((ans) => (
+                <div key={ans.playerId} className="py-2.5 flex items-center justify-between gap-4">
+                  <span className="font-bold text-gray-900 text-sm truncate">{ans.playerName}</span>
+                  <span className={`font-mono text-sm font-extrabold px-3 py-1 rounded-xl ${
+                    ans.answerText === 'No answer' 
+                      ? 'bg-gray-100 text-gray-400 font-normal italic' 
+                      : 'bg-gray-100 text-primary border border-gray-200'
+                  }`}>
+                    {ans.answerText}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Role reminder for alive players */}
         {!isDead && gameState.myRole && (

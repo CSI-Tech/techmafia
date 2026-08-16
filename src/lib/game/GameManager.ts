@@ -193,6 +193,7 @@ export class GameManager {
     team.players.forEach(p => {
       p.round1Answered = false;
       p.round1AnswerCorrect = false;
+      p.round1AnswerText = undefined;
     });
 
     return team;
@@ -220,6 +221,7 @@ export class GameManager {
     }
 
     player.round1Answered = true;
+    player.round1AnswerText = (answer || '').trim();
     player.round1AnswerCorrect = isCorrect;
 
     // Check if all alive players have answered
@@ -640,6 +642,14 @@ export class GameManager {
       myRound1Question,
       myNightQuiz,
       investigatorResult: reqPlayer?.role === 'INVESTIGATOR' && !hideRole ? team.investigatorResult : null,
+      round1Answers:
+        team.currentState === 'ROUND_1_DISCUSSION'
+          ? team.players.map((p) => ({
+              playerId: p.id,
+              playerName: p.name,
+              answerText: p.round1Answered && p.round1AnswerText && p.round1AnswerText.trim() !== '' ? p.round1AnswerText : 'No answer',
+            }))
+          : null,
       // Reveal roles publicly ONLY when game is complete
       revealedRoles:
         team.currentState === 'GAME_COMPLETE'
