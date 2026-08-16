@@ -65,6 +65,11 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
         nightQuizAnswered: p.nightQuizAnswered,
         nightActionTarget: p.nightActionTarget,
         targetPlayerName: team.players.find(tp => tp.id === p.nightActionTarget)?.name || null,
+        round1Answered: p.round1Answered,
+        round1AnswerCorrect: p.round1AnswerCorrect,
+        round1AnswerText: p.round1AnswerText,
+        nightQuizAnswerText: p.nightQuizAnswerText,
+        nightQuizAnswerCorrect: p.nightQuizAnswerCorrect,
       })),
       aliveCount: team.players.filter((p) => p.status === 'ALIVE').length,
       deadCount: team.players.filter((p) => p.status === 'DEAD').length,
@@ -150,8 +155,8 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
     console.log(`[+] Connected: ${socket.id}`);
 
     socket.on('joinRoom', async ({
-      loginCode, teamId, playerName, playerSessionId,
-    }: { loginCode?: string; teamId?: string; playerName: string; playerSessionId?: string }) => {
+      loginCode, teamId, playerName, playerSessionId, googleEmail,
+    }: { loginCode?: string; teamId?: string; playerName: string; playerSessionId?: string; googleEmail?: string }) => {
       try {
         const code = (loginCode || teamId || '').trim().toUpperCase();
         if (!code || !playerName || typeof playerName !== 'string') {
@@ -179,7 +184,7 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
           }
         }
 
-        const result = gameManager.joinTeam(cleanTeamId, socket.id, cleanPlayerName, playerSessionId);
+        const result = gameManager.joinTeam(cleanTeamId, socket.id, cleanPlayerName, playerSessionId, googleEmail);
         if (result.success) {
           socket.join(cleanTeamId);
           socket.data.teamId = cleanTeamId;
@@ -353,7 +358,7 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
       }
     });
 
-    socket.on('submitNightQuiz', async ({ teamId }: { teamId: string }) => {
+    socket.on('submitNightQuiz', async ({ teamId, answer }: { teamId: string; answer: string }) => {
       if (socket.data.teamId !== teamId) {
         socket.emit('error', 'Unauthorized team');
         return;
@@ -369,7 +374,7 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
         return;
       }
 
-      if (gameManager.submitNightQuiz(teamId, socket.id)) {
+      if (gameManager.submitNightQuiz(teamId, socket.id, answer)) {
         await logEvent(teamId, team.roomCode, team.currentRound, `${socket.data.playerName} solved Night quiz`);
         await broadcastGameState(teamId);
         await checkAndLogNightCompletion(teamId);

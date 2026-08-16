@@ -91,7 +91,8 @@ export class GameManager {
     teamId: string,
     playerId: string,
     playerName: string,
-    playerSessionId?: string
+    playerSessionId?: string,
+    googleEmail?: string
   ): { success: boolean; message?: string } {
     if (!teamId || typeof teamId !== 'string') {
       return { success: false, message: 'Invalid login code' };
@@ -107,13 +108,21 @@ export class GameManager {
     }
     const trimmedName = playerName.trim();
 
-    // Allow reconnect if player exists by name
-    const existing = team.players.find((p) => p.name === trimmedName);
+    // Allow reconnect if player exists by googleEmail or by name
+    const existing = team.players.find((p) => 
+      (googleEmail && p.googleEmail === googleEmail) || 
+      (p.name === trimmedName)
+    );
+
     if (existing) {
-      if (existing.sessionId && existing.sessionId !== playerSessionId) {
-        return { success: false, message: 'Name already in use' };
+      // If matching by name but googleEmails don't match, block
+      if (googleEmail && existing.googleEmail && existing.googleEmail !== googleEmail) {
+        return { success: false, message: 'Name already in use by another account' };
       }
+
       existing.id = playerId;
+      if (googleEmail) existing.googleEmail = googleEmail;
+      if (playerSessionId) existing.sessionId = playerSessionId;
       return { success: true };
     }
 
@@ -132,6 +141,7 @@ export class GameManager {
       role: null,
       status: 'ALIVE',
       sessionId: playerSessionId,
+      googleEmail: googleEmail,
     });
 
     if (team.players.length >= maxP) {
@@ -387,6 +397,8 @@ export class GameManager {
     // Reset night states
     team.players.forEach(p => {
       p.nightQuizAnswered = false;
+      p.nightQuizAnswerText = undefined;
+      p.nightQuizAnswerCorrect = undefined;
       p.nightActionTarget = null;
     });
     team.investigatorResult = null;
@@ -395,14 +407,26 @@ export class GameManager {
     return team;
   }
 
-  submitNightQuiz(teamId: string, playerId: string): boolean {
+  submitNightQuiz(teamId: string, playerId: string, answer: string): boolean {
     const team = this.teams.get(teamId);
     if (!team || team.currentState !== 'NIGHT') return false;
 
     const player = team.players.find(p => p.id === playerId);
     if (!player || player.status !== 'ALIVE' || player.role !== 'CIVILIAN') return false;
 
+    const quizzes = loadNightQuizzes();
+    const currentQuiz = quizzes.find(q => q.id === team.currentNightQuizId);
+    let isCorrect = false;
+    if (currentQuiz) {
+      const cleanUserAns = (answer || '').trim().toLowerCase();
+      const cleanTarget = (currentQuiz.answer || '').trim().toLowerCase();
+      isCorrect = cleanUserAns === cleanTarget;
+    }
+
     player.nightQuizAnswered = true;
+    player.nightQuizAnswerText = (answer || '').trim();
+    player.nightQuizAnswerCorrect = isCorrect;
+
     this.checkNightResolution(teamId);
     return true;
   }

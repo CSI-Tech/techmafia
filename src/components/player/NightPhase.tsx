@@ -52,7 +52,7 @@ function SubmittedScreen({ message }: { message: string }) {
 export function NightPhase() {
   const { gameState, submitNightAction, submitNightQuiz } = useSocket();
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
 
   if (!gameState) return null;
@@ -225,31 +225,23 @@ export function NightPhase() {
               <p className="text-white font-bold text-base leading-snug">{quiz.question}</p>
             </div>
             <div className="space-y-3 flex-1">
-              {quiz.options?.map((opt, i) => {
-                const letter = ['A', 'B', 'C', 'D'][i];
-                const isSelected = selectedAnswer === opt;
-                return (
-                  <button
-                    key={opt}
-                    onClick={() => setSelectedAnswer(opt)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left active:scale-[0.98] ${
-                      isSelected ? 'border-blue-500 bg-blue-950/40' : 'border-slate-700 bg-slate-900 hover:border-slate-600'
-                    }`}
-                  >
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
-                      isSelected ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-300'
-                    }`}>
-                      {letter}
-                    </div>
-                    <span className={`font-semibold text-base ${isSelected ? 'text-white' : 'text-slate-300'}`}>{opt}</span>
-                    {isSelected && (
-                      <svg className="ml-auto w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
-                );
-              })}
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Type Your Answer
+              </label>
+              <input
+                type="text"
+                value={selectedAnswer}
+                onChange={(e) => setSelectedAnswer(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && selectedAnswer.trim()) {
+                    submitNightQuiz(selectedAnswer.trim());
+                    setSubmitted(true);
+                  }
+                }}
+                placeholder="Type your answer here..."
+                className="w-full bg-slate-900 border-2 border-slate-700 rounded-2xl px-5 py-4 text-lg font-bold text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
+                autoFocus
+              />
             </div>
           </>
         ) : (
@@ -261,10 +253,10 @@ export function NightPhase() {
 
       <div className="p-6 pb-10">
         <Button
-          disabled={!selectedAnswer || !quiz}
+          disabled={!selectedAnswer.trim() || !quiz}
           onClick={() => {
-            if (!selectedAnswer) return;
-            submitNightQuiz(selectedAnswer);
+            if (!selectedAnswer.trim()) return;
+            submitNightQuiz(selectedAnswer.trim());
             setSubmitted(true);
           }}
         >

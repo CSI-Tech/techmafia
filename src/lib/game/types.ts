@@ -14,7 +14,10 @@ export interface Player {
   round1AnswerCorrect?: boolean;
   round1AnswerText?: string;
   nightQuizAnswered?: boolean;
+  nightQuizAnswerText?: string;
+  nightQuizAnswerCorrect?: boolean;
   nightActionTarget?: string | null; // target player ID (for Mafia kill / Investigator check)
+  googleEmail?: string;
 }
 
 export interface Team {

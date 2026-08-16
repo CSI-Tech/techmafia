@@ -3,9 +3,10 @@ import type { AdminPlayer } from '@/types';
 
 interface PlayerTableProps {
   players: AdminPlayer[];
+  currentState?: string;
 }
 
-export function PlayerTable({ players }: PlayerTableProps) {
+export function PlayerTable({ players, currentState }: PlayerTableProps) {
   if (!players || players.length === 0) {
     return (
       <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-300">
@@ -14,14 +15,132 @@ export function PlayerTable({ players }: PlayerTableProps) {
     );
   }
 
+  const hasStarted = currentState && currentState !== 'WAITING_FOR_PLAYERS' && currentState !== 'READY';
+
+  const renderChallengeResponse = (p: AdminPlayer, state?: string) => {
+    // 1. Show Round 1 details if they exist or if in Round 1 phases
+    const isRound1Phase = state?.startsWith('ROUND_1_') || p.round1Answered;
+    
+    if (isRound1Phase) {
+      if (p.round1AnswerText) {
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-gray-900 text-sm">
+              "{p.round1AnswerText}"
+            </span>
+            <span>
+              {p.round1AnswerCorrect ? (
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-green-600">
+                  ✓ Correct
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-red-500">
+                  ✗ Incorrect
+                </span>
+              )}
+            </span>
+          </div>
+        );
+      } else if (p.round1Answered) {
+        return <span className="text-sm font-semibold text-gray-500">Submitted</span>;
+      } else if (p.status === 'ALIVE') {
+        return <span className="text-sm font-medium text-gray-400 italic animate-pulse">Solving...</span>;
+      } else {
+        return <span className="text-sm text-gray-400">-</span>;
+      }
+    }
+
+    // 2. Show Night Action / Quiz details if in NIGHT phase
+    if (state === 'NIGHT') {
+      if (p.role === 'CIVILIAN') {
+        if (p.nightQuizAnswerText) {
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="font-semibold text-gray-900 text-sm">
+                "{p.nightQuizAnswerText}"
+              </span>
+              <span>
+                {p.nightQuizAnswerCorrect ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-green-600">
+                    ✓ Correct
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-red-500">
+                    ✗ Incorrect
+                  </span>
+                )}
+              </span>
+            </div>
+          );
+        } else if (p.nightQuizAnswered) {
+          return <span className="text-sm font-semibold text-gray-500">Submitted</span>;
+        } else if (p.status === 'ALIVE') {
+          return <span className="text-sm font-medium text-gray-400 italic animate-pulse">Solving Quiz...</span>;
+        } else {
+          return <span className="text-sm text-gray-400">-</span>;
+        }
+      } else if (p.role === 'MAFIA') {
+        if (p.targetPlayerName) {
+          return (
+            <div className="text-sm">
+              <span className="text-xs font-bold text-red-400 uppercase tracking-wider block">Kill Action</span>
+              <span className="font-bold text-red-700">Target: {p.targetPlayerName}</span>
+            </div>
+          );
+        } else if (p.status === 'ALIVE') {
+          return <span className="text-sm font-medium text-gray-400 italic animate-pulse">Choosing target...</span>;
+        }
+      } else if (p.role === 'INVESTIGATOR') {
+        if (p.targetPlayerName) {
+          return (
+            <div className="text-sm">
+              <span className="text-xs font-bold text-amber-500 uppercase tracking-wider block">Investigate Action</span>
+              <span className="font-bold text-amber-700">Check: {p.targetPlayerName}</span>
+            </div>
+          );
+        } else if (p.status === 'ALIVE') {
+          return <span className="text-sm font-medium text-gray-400 italic animate-pulse">Choosing target...</span>;
+        }
+      }
+    }
+
+    // 3. Post-Night Morning and Round 2 phases can display night quiz response if available
+    if (p.nightQuizAnswerText) {
+      return (
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Night Quiz Response</span>
+          <span className="font-semibold text-gray-900 text-sm">
+            "{p.nightQuizAnswerText}"
+          </span>
+          <span>
+            {p.nightQuizAnswerCorrect ? (
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-green-600">
+                ✓ Correct
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-red-500">
+                ✗ Incorrect
+              </span>
+            )}
+          </span>
+        </div>
+      );
+    }
+
+    return <span className="text-sm text-gray-400">-</span>;
+  };
+
   return (
-    <div className="overflow-hidden bg-white border border-gray-200 rounded-xl">
+    <div className="overflow-hidden bg-white border border-gray-200 rounded-xl shadow-sm">
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">
             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Player</th>
             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
+            {hasStarted && (
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Challenge Response / Action</th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -59,6 +178,11 @@ export function PlayerTable({ players }: PlayerTableProps) {
                   <span className="text-gray-400 italic">Unassigned</span>
                 )}
               </td>
+              {hasStarted && (
+                <td className="px-6 py-4">
+                  {renderChallengeResponse(p, currentState)}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

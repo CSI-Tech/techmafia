@@ -8,7 +8,7 @@ interface SocketContextProps {
   connected: boolean;
   gameState: SanitizedGameState | null;
   error: string | null;
-  joinRoom: (loginCode: string, playerName: string) => void;
+  joinRoom: (loginCode: string, playerName: string, googleEmail?: string) => void;
   startGame: () => void;
   startDiscussion: () => void;
   submitVote: (targetName: string) => void;
@@ -38,11 +38,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const playerName = sessionStorage.getItem('techmafia_playerName');
       const loginCode = sessionStorage.getItem('techmafia_loginCode') || sessionStorage.getItem('techmafia_teamId');
       const playerSessionId = sessionStorage.getItem('techmafia_playerSessionId') || undefined;
+      const googleEmail = sessionStorage.getItem('techmafia_googleEmail') || undefined;
       if (playerName && loginCode) {
         s.emit('joinRoom', {
           loginCode: loginCode.trim().toUpperCase(),
           playerName: playerName.trim(),
           playerSessionId,
+          googleEmail,
         });
       }
     });
@@ -70,7 +72,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => { s.disconnect(); };
   }, []);
 
-  const joinRoom = (loginCode: string, playerName: string) => {
+  const joinRoom = (loginCode: string, playerName: string, googleEmail?: string) => {
     let playerSessionId = sessionStorage.getItem('techmafia_playerSessionId');
     if (!playerSessionId) {
       playerSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -82,10 +84,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     sessionStorage.setItem('techmafia_playerName', cleanPlayerName);
     sessionStorage.setItem('techmafia_loginCode', cleanCode);
     sessionStorage.setItem('techmafia_teamId', cleanCode);
+    if (googleEmail) {
+      sessionStorage.setItem('techmafia_googleEmail', googleEmail);
+    } else {
+      sessionStorage.removeItem('techmafia_googleEmail');
+    }
     socket?.emit('joinRoom', {
       loginCode: cleanCode,
       playerName: cleanPlayerName,
       playerSessionId,
+      googleEmail,
     });
   };
 
