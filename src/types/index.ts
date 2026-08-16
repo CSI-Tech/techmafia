@@ -88,6 +88,12 @@ export type AdminPlayer = {
   nightQuizAnswered?: boolean;
   nightActionTarget?: string | null;
   targetPlayerName?: string | null;
+  round1Answered?: boolean;
+  round1AnswerCorrect?: boolean;
+  round1AnswerText?: string;
+  nightQuizAnswerText?: string;
+  nightQuizAnswerCorrect?: boolean;
+  googleEmail?: string;
 };
 
 /** Full team snapshot pushed over admin Socket.IO namespace */

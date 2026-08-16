@@ -30,7 +30,7 @@ export function Round1Question() {
   if (!gameState) return null;
 
   const q = gameState.myRound1Question;
-  const isTypeAnswer = q?.type === 'TYPE_ANSWER' || !q?.options || q.options.length === 0;
+  const isTypeAnswer = true;
 
   const handleSubmit = () => {
     const finalAnswer = isTypeAnswer ? typedAnswer.trim() : selected;

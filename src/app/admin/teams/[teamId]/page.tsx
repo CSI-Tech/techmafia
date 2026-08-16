@@ -260,7 +260,7 @@ export default function TeamDetail() {
           {/* Player Monitoring Table */}
           <section>
             <h3 className="text-xl font-bold text-gray-900 mb-4">Player Monitoring</h3>
-            <PlayerTable players={live?.players || []} />
+            <PlayerTable players={live?.players || []} currentState={live?.currentState} />
           </section>
 
           {/* Elimination History */}
