@@ -5,7 +5,6 @@ import { io, Socket } from 'socket.io-client';
 import type { AdminTeam, AdminTeamUpdate, RoomStatus, Role } from '@/types';
 
 const BACKEND = '';
-const ADMIN_HEADER = { 'x-admin-auth': 'true' } as const;
 
 interface AdminSocketContextProps {
   connected: boolean;
@@ -23,7 +22,7 @@ export const AdminSocketProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const refreshTeams = async () => {
     try {
-      const res = await fetch(`${BACKEND}/api/admin/teams`, { headers: ADMIN_HEADER });
+      const res = await fetch(`${BACKEND}/api/admin/teams`);
       const data: { success: boolean; teams: AdminTeam[] } = await res.json();
       if (data.success) setTeams(data.teams);
     } catch {

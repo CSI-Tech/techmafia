@@ -9,10 +9,10 @@ async function getAdminToken() {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Protect all API admin routes EXCEPT the login route
   if (request.nextUrl.pathname.startsWith('/api/admin') && !request.nextUrl.pathname.startsWith('/api/admin/login')) {
-    const adminToken = request.cookies.get('admin_token')?.value || request.headers.get('x-admin-auth');
+    const adminToken = request.cookies.get('admin_token')?.value;
     const expected = await getAdminToken();
 
     if (!adminToken || adminToken !== expected) {

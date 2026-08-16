@@ -22,8 +22,8 @@ export default function TeamDetail() {
     const fetchDetail = async () => {
       try {
         const [teamRes, logsRes] = await Promise.all([
-          fetch(`/api/admin/teams/${teamId}`, { headers: { 'x-admin-auth': 'true' } }),
-          fetch(`/api/admin/teams/${teamId}/logs`, { headers: { 'x-admin-auth': 'true' } })
+          fetch(`/api/admin/teams/${teamId}`),
+          fetch(`/api/admin/teams/${teamId}/logs`)
         ]);
         
         const teamData = await teamRes.json();

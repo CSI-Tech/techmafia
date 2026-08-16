@@ -15,6 +15,8 @@ export async function GET() {
               currentState: live.currentState,
               currentRound: live.currentRound,
               timerEndsAt: live.timerEndsAt,
+              maxPlayers: live.maxPlayers || room.maxPlayers || 8,
+              loginCode: room.loginCode || room.roomCode,
               playerCount: live.players.length,
               aliveCount: live.players.filter((p: any) => p.status === 'ALIVE').length,
               deadCount: live.players.filter((p: any) => p.status === 'DEAD').length,

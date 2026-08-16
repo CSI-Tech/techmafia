@@ -2,7 +2,7 @@ import { Namespace, Server, Socket } from 'socket.io';
 import { gameManager } from '../game/GameManager';
 import { logEvent, updateRoomStatus } from '../services/GameLogger';
 import crypto from 'crypto';
-import { getRoom, saveTeamLiveState } from '../db/dbHelper';
+import { getRoom, getRoomByLoginCode, saveTeamLiveState } from '../db/dbHelper';
 
 import type { Team, Player } from '../game/types';
 import type { GameState } from '@/types';
@@ -49,6 +49,8 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
     adminNs.emit('adminTeamUpdate', {
       teamId: team.teamId,
       roomCode: team.roomCode,
+      loginCode: team.roomCode,
+      maxPlayers: team.maxPlayers || 8,
       currentState: team.currentState,
       currentRound: team.currentRound,
       timerEndsAt: team.timerEndsAt,
@@ -115,6 +117,8 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
     const snapshot = gameManager.getAllTeams().map((team) => ({
       teamId: team.teamId,
       roomCode: team.roomCode,
+      loginCode: team.roomCode,
+      maxPlayers: team.maxPlayers || 8,
       currentState: team.currentState,
       currentRound: team.currentRound,
       timerEndsAt: team.timerEndsAt,
@@ -146,51 +150,55 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
     console.log(`[+] Connected: ${socket.id}`);
 
     socket.on('joinRoom', async ({
-      teamId, roomCode, playerName, playerSessionId,
-    }: { teamId: string; roomCode: string; playerName: string; playerSessionId?: string }) => {
+      loginCode, teamId, playerName, playerSessionId,
+    }: { loginCode?: string; teamId?: string; playerName: string; playerSessionId?: string }) => {
       try {
-        if (!teamId || typeof teamId !== 'string' || !roomCode || typeof roomCode !== 'string') {
-          socket.emit('joinError', 'Invalid team or room code');
+        const code = (loginCode || teamId || '').trim().toUpperCase();
+        if (!code || !playerName || typeof playerName !== 'string') {
+          socket.emit('joinError', 'Invalid login code');
           return;
         }
 
-        const room = await getRoom(teamId);
+        const cleanPlayerName = playerName.trim();
+
+        const room = await getRoomByLoginCode(code);
         if (!room) {
-          socket.emit('joinError', 'Team not found');
+          socket.emit('joinError', 'Invalid login code');
           return;
         }
 
-        if (room.roomCode !== roomCode) {
-          socket.emit('joinError', 'Invalid room code');
-          return;
-        }
+        const cleanTeamId = room.teamId;
+        const cleanRoomCode = room.roomCode || '';
+        const maxPlayers = room.maxPlayers || 8;
 
-        if (!gameManager.getTeam(teamId)) {
+        if (!gameManager.getTeam(cleanTeamId)) {
           if (room.liveState) {
-            gameManager.loadTeamFromState(teamId, room.liveState);
+            gameManager.loadTeamFromState(cleanTeamId, room.liveState);
           } else {
-            gameManager.initializeTeam(teamId, roomCode, room.status);
+            gameManager.initializeTeam(cleanTeamId, cleanRoomCode, room.status, maxPlayers);
           }
         }
 
-        const result = gameManager.joinTeam(teamId, roomCode, socket.id, playerName, playerSessionId);
+        const result = gameManager.joinTeam(cleanTeamId, socket.id, cleanPlayerName, playerSessionId);
         if (result.success) {
-          socket.join(teamId);
-          socket.data.teamId = teamId;
-          socket.data.playerName = playerName.trim();
-          await broadcastGameState(teamId);
+          socket.join(cleanTeamId);
+          socket.data.teamId = cleanTeamId;
+          socket.data.roomCode = cleanRoomCode;
+          socket.data.playerName = cleanPlayerName;
+          await broadcastGameState(cleanTeamId);
 
-          const team = gameManager.getTeam(teamId)!;
-          await logEvent(teamId, roomCode, team.currentRound, `${playerName.trim()} joined`);
-          await updateRoomStatus(teamId, {
+          const team = gameManager.getTeam(cleanTeamId)!;
+          await logEvent(cleanTeamId, cleanRoomCode, team.currentRound, `Player joined: ${cleanPlayerName}`);
+          await updateRoomStatus(cleanTeamId, {
             playerNames: team.players.map((p) => p.name),
-            status: team.players.length >= 8 ? 'READY' : 'WAITING',
+            status: team.players.length >= maxPlayers ? 'READY' : 'WAITING',
           });
         } else {
-          socket.emit('joinError', result.message || 'Could not join room');
+          socket.emit('joinError', result.message || 'Invalid login code');
         }
       } catch (err) {
-        socket.emit('joinError', 'Server error');
+        console.error('[Socket] joinRoom error:', err);
+        socket.emit('joinError', 'Invalid login code');
       }
     });
 
@@ -207,8 +215,34 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
       if (gameManager.startGame(teamId)) {
         await broadcastGameState(teamId);
         await logEvent(teamId, team.roomCode, team.currentRound, 'Game started — roles assigned secretly');
-        await logEvent(teamId, team.roomCode, 1, 'Round 1 questions delivered to players');
+        await logEvent(teamId, team.roomCode, 1, 'Round 1 questions delivered to players (2-min timer)');
         await updateRoomStatus(teamId, { status: 'IN_PROGRESS' });
+
+        const timerRemaining = Math.max(0, team.timerEndsAt! - Date.now());
+        scheduleTransition(teamId, 'ROUND_1_QUESTION', timerRemaining, async () => {
+          gameManager.startDiscussion(teamId);
+          const t = gameManager.getTeam(teamId)!;
+          await logEvent(teamId, t.roomCode, 1, 'Round 1 Discussion started');
+
+          const discussionEnd = Math.max(0, t.timerEndsAt! - Date.now());
+          scheduleTransition(teamId, 'ROUND_1_DISCUSSION', discussionEnd, async () => {
+            gameManager.startVoting(teamId);
+            const tv = gameManager.getTeam(teamId)!;
+            await logEvent(teamId, tv.roomCode, 1, 'Round 1 Voting started');
+
+            scheduleTransition(teamId, 'ROUND_1_VOTING', 30000, async () => {
+              gameManager.evaluateVotes(teamId);
+              const tr = gameManager.getTeam(teamId)!;
+              await logEvent(teamId, tr.roomCode, 1, 'Round 1 Voting ended automatically');
+              const elim = tr.eliminatedThisRound;
+              if (elim) {
+                await logEvent(teamId, tr.roomCode, 1, `${elim} eliminated`, `Role: ${tr.eliminatedRoleThisRound}`);
+              } else {
+                await logEvent(teamId, tr.roomCode, 1, 'Vote tied — no elimination');
+              }
+            });
+          });
+        });
       }
     });
 
@@ -454,8 +488,15 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
       });
     };
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       console.log(`[-] Disconnected: ${socket.id}`);
+      if (socket.data.teamId && socket.data.playerName) {
+        const teamId = socket.data.teamId;
+        const roomCode = socket.data.roomCode || '';
+        const team = gameManager.getTeam(teamId);
+        const round = team ? team.currentRound : 0;
+        await logEvent(teamId, roomCode, round, `Player left: ${socket.data.playerName}`, `Socket disconnected: ${socket.id}`);
+      }
     });
   });
 }

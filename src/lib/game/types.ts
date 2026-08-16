@@ -42,6 +42,7 @@ export interface Team {
   morningResults: string[]; // public events for morning announcement
   
   // Configurations
+  maxPlayers: number;
   tieRule: 'NO_ELIMINATION' | 'RANDOM_ELIMINATION';
   mafiaSelectionRule: 'KILL_ALL' | 'AGREE_OR_NO_KILL';
 }

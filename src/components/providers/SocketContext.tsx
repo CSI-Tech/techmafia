@@ -8,7 +8,7 @@ interface SocketContextProps {
   connected: boolean;
   gameState: SanitizedGameState | null;
   error: string | null;
-  joinRoom: (teamId: string, roomCode: string, playerName: string) => void;
+  joinRoom: (loginCode: string, playerName: string) => void;
   startGame: () => void;
   startDiscussion: () => void;
   submitVote: (targetName: string) => void;
@@ -36,10 +36,14 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     s.on('connect', () => {
       setConnected(true);
       const playerName = sessionStorage.getItem('techmafia_playerName');
-      const teamId = sessionStorage.getItem('techmafia_teamId');
-      const roomCode = sessionStorage.getItem('techmafia_roomCode');
-      if (playerName && teamId && roomCode) {
-        s.emit('joinRoom', { teamId, roomCode, playerName });
+      const loginCode = sessionStorage.getItem('techmafia_loginCode') || sessionStorage.getItem('techmafia_teamId');
+      const playerSessionId = sessionStorage.getItem('techmafia_playerSessionId') || undefined;
+      if (playerName && loginCode) {
+        s.emit('joinRoom', {
+          loginCode: loginCode.trim().toUpperCase(),
+          playerName: playerName.trim(),
+          playerSessionId,
+        });
       }
     });
     s.on('disconnect', () => setConnected(false));
@@ -47,6 +51,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     s.on('gameStateSync', (state: SanitizedGameState) => {
       setGameState(state);
       setError(null);
+      if (state.teamId) {
+        sessionStorage.setItem('techmafia_teamId', state.teamId);
+      }
     });
 
     s.on('joinError', (msg: string) => {
@@ -63,16 +70,23 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => { s.disconnect(); };
   }, []);
 
-  const joinRoom = (teamId: string, roomCode: string, playerName: string) => {
+  const joinRoom = (loginCode: string, playerName: string) => {
     let playerSessionId = sessionStorage.getItem('techmafia_playerSessionId');
     if (!playerSessionId) {
       playerSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
       sessionStorage.setItem('techmafia_playerSessionId', playerSessionId);
     }
-    sessionStorage.setItem('techmafia_playerName', playerName);
-    sessionStorage.setItem('techmafia_teamId', teamId);
-    sessionStorage.setItem('techmafia_roomCode', roomCode);
-    socket?.emit('joinRoom', { teamId, roomCode, playerName, playerSessionId });
+    const cleanCode = loginCode.trim().toUpperCase();
+    const cleanPlayerName = playerName.trim();
+
+    sessionStorage.setItem('techmafia_playerName', cleanPlayerName);
+    sessionStorage.setItem('techmafia_loginCode', cleanCode);
+    sessionStorage.setItem('techmafia_teamId', cleanCode);
+    socket?.emit('joinRoom', {
+      loginCode: cleanCode,
+      playerName: cleanPlayerName,
+      playerSessionId,
+    });
   };
 
   const startGame = () => {

@@ -2,8 +2,9 @@ import fs from 'fs';
 import path from 'path';
 
 export interface Question {
+  type?: 'MULTIPLE_CHOICE' | 'TYPE_ANSWER';
   question: string;
-  options: string[];
+  options?: string[];
   answer: string;
 }
 

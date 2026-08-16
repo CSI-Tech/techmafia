@@ -2,6 +2,14 @@
 import { GameRoom } from './models/GameRoom';
 import { GameLog } from './models/GameLog';
 import mongoose from 'mongoose';
+import { connectMongo } from './connection';
+
+/** Ensure DB is connected before running any query. */
+async function ensureConnected(): Promise<void> {
+  if (mongoose.connection.readyState !== 1) {
+    await connectMongo();
+  }
+}
 
 // In-memory global store fallbacks to handle "No MongoDB" mode gracefully
 const globalForDb = global as unknown as {
@@ -12,31 +20,40 @@ const globalForDb = global as unknown as {
 export const globalMemoryRooms = globalForDb.globalMemoryRooms ?? new Map<string, any>();
 export const globalMemoryLogs = globalForDb.globalMemoryLogs ?? [];
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForDb.globalMemoryRooms = globalMemoryRooms;
-  globalForDb.globalMemoryLogs = globalMemoryLogs;
-}
+globalForDb.globalMemoryRooms = globalMemoryRooms;
+globalForDb.globalMemoryLogs = globalMemoryLogs;
 
 export async function getRooms(filter: any = {}): Promise<any[]> {
-  if (mongoose.connection.readyState !== 1) {
-    throw new Error('MongoDB connection is not active');
-  }
+  await ensureConnected();
   return await GameRoom.find(filter).sort({ createdAt: -1 }).lean();
 }
 
 export async function getRoom(teamId: string): Promise<any | null> {
-  if (mongoose.connection.readyState !== 1) {
-    throw new Error('MongoDB connection is not active');
-  }
+  await ensureConnected();
   return await GameRoom.findOne({ teamId }).lean();
 }
 
+export async function getRoomByLoginCode(code: string): Promise<any | null> {
+  await ensureConnected();
+  const cleanCode = code.trim().toUpperCase();
+  const cleanId = cleanCode.replace(/\s+/g, '');
+  return await GameRoom.findOne({
+    $or: [
+      { loginCode: cleanCode },
+      { roomCode: cleanCode },
+      { teamId: cleanId },
+      { teamNumber: cleanCode },
+      { teamNumber: new RegExp(`^${cleanCode}$`, 'i') }
+    ]
+  }).lean();
+}
+
 export async function createRoom(data: any): Promise<any> {
-  if (mongoose.connection.readyState !== 1) {
-    throw new Error('MongoDB connection is not active');
-  }
+  await ensureConnected();
   const roomData = {
     ...data,
+    loginCode: data.loginCode || data.roomCode,
+    maxPlayers: data.maxPlayers || 8,
     createdAt: new Date(),
     rounds: data.rounds || 0,
     playerNames: data.playerNames || [],
@@ -48,25 +65,19 @@ export async function createRoom(data: any): Promise<any> {
 }
 
 export async function updateRoom(teamId: string, update: any): Promise<void> {
-  if (mongoose.connection.readyState !== 1) {
-    throw new Error('MongoDB connection is not active');
-  }
+  await ensureConnected();
   await GameRoom.updateOne({ teamId }, { $set: update });
 }
 
 export async function getLogs(filter: any = {}): Promise<any[]> {
-  if (mongoose.connection.readyState !== 1) {
-    throw new Error('MongoDB connection is not active');
-  }
+  await ensureConnected();
   const mongoFilter: any = { ...filter };
   if (mongoFilter.round) mongoFilter.round = Number(mongoFilter.round);
   return await GameLog.find(mongoFilter).sort({ timestamp: -1 }).limit(500).lean();
 }
 
 export async function createLog(data: any): Promise<void> {
-  if (mongoose.connection.readyState !== 1) {
-    throw new Error('MongoDB connection is not active');
-  }
+  await ensureConnected();
   const logData = {
     ...data,
     timestamp: new Date(),
@@ -75,8 +86,6 @@ export async function createLog(data: any): Promise<void> {
 }
 
 export async function saveTeamLiveState(teamId: string, teamState: any): Promise<void> {
-  if (mongoose.connection.readyState !== 1) {
-    throw new Error('MongoDB connection is not active');
-  }
+  await ensureConnected();
   await GameRoom.updateOne({ teamId }, { $set: { liveState: teamState } });
 }

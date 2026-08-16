@@ -24,8 +24,7 @@ export default function JoinPage() {
   const [mode, setMode] = useState<Mode>('SELECT_ROLE');
 
   // Player fields
-  const [teamCode, setTeamCode] = useState('');
-  const [roomCode, setRoomCode] = useState('');
+  const [loginCode, setLoginCode] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [localError, setLocalError] = useState('');
 
@@ -46,10 +45,9 @@ export default function JoinPage() {
   const handleJoin = () => {
     clearError();
     setLocalError('');
-    if (!teamCode.trim()) { setLocalError('Enter a team code'); return; }
-    if (!roomCode.trim()) { setLocalError('Enter a room code'); return; }
+    if (!loginCode.trim()) { setLocalError('Enter your login code'); return; }
     if (!playerName.trim()) { setLocalError('Enter your name'); return; }
-    joinRoom(teamCode.trim(), roomCode.trim(), playerName.trim());
+    joinRoom(loginCode.trim(), playerName.trim());
   };
 
   // ── Admin login ─────────────────────────────────────────────────────────────
@@ -153,42 +151,28 @@ export default function JoinPage() {
             )}
 
             <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Team Code</label>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">LOGIN CODE</label>
               <input
-                id="input-team-code"
+                id="input-login-code"
                 type="text"
-                value={teamCode}
-                onChange={e => setTeamCode(e.target.value.toUpperCase())}
+                value={loginCode}
+                onChange={e => setLoginCode(e.target.value.toUpperCase())}
                 onKeyDown={e => e.key === 'Enter' && handleJoin()}
-                placeholder="TEAM05"
-                maxLength={10}
+                placeholder="ABC123"
+                maxLength={12}
                 className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-lg font-bold text-center tracking-widest focus:outline-none focus:border-primary focus:bg-white transition-colors placeholder:text-gray-300 placeholder:font-normal placeholder:tracking-normal uppercase"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Room Code</label>
-              <input
-                id="input-room-code"
-                type="text"
-                value={roomCode}
-                onChange={e => setRoomCode(e.target.value.toUpperCase())}
-                onKeyDown={e => e.key === 'Enter' && handleJoin()}
-                placeholder="K7M2PX"
-                maxLength={6}
-                className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-lg font-bold text-center tracking-widest focus:outline-none focus:border-primary focus:bg-white transition-colors placeholder:text-gray-300 placeholder:font-normal placeholder:tracking-normal uppercase"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Your Name</label>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">PLAYER NAME</label>
               <input
                 id="input-player-name"
                 type="text"
                 value={playerName}
                 onChange={e => setPlayerName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleJoin()}
-                placeholder="e.g. Alex"
+                placeholder="Enter your name"
                 maxLength={20}
                 className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-lg font-bold text-center focus:outline-none focus:border-primary focus:bg-white transition-colors placeholder:text-gray-300 placeholder:font-normal"
               />

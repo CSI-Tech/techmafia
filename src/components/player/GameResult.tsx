@@ -28,7 +28,7 @@ export function GameResult() {
         </h1>
         <p className="text-white/80 text-sm font-semibold">
           {isCivWin
-            ? 'Both Mafia have been eliminated.'
+            ? 'All Mafia have been eliminated.'
             : 'The Mafia have taken control.'}
         </p>
 

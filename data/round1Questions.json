@@ -47,6 +47,20 @@
         ],
         "answer": "git merge"
       }
+    },
+    {
+      "id": "sql_type",
+      "category": "SQL",
+      "civilian": {
+        "type": "TYPE_ANSWER",
+        "question": "Which SQL command is used to retrieve data from a table?",
+        "answer": "SELECT"
+      },
+      "mafia": {
+        "type": "TYPE_ANSWER",
+        "question": "Which SQL command is used to modify existing data in a table?",
+        "answer": "UPDATE"
+      }
     }
   ]
 }

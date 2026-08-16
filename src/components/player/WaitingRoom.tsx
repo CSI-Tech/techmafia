@@ -6,8 +6,9 @@ export function WaitingRoom() {
   const { gameState, startGame } = useSocket();
   if (!gameState) return null;
 
+  const maxPlayers = gameState.maxPlayers || 8;
   const count = gameState.players.length;
-  const isReady = count === 8;
+  const isReady = count >= maxPlayers;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -32,13 +33,13 @@ export function WaitingRoom() {
           <div className={`px-8 py-3 rounded-full font-extrabold text-lg transition-colors ${
             isReady ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-700'
           }`}>
-            {count} / 8 PLAYERS
+            {count} / {maxPlayers} PLAYERS
           </div>
         </div>
 
         {/* Player slots */}
         <div className="space-y-2.5">
-          {Array.from({ length: 8 }).map((_, i) => {
+          {Array.from({ length: maxPlayers }).map((_, i) => {
             const player = gameState.players[i];
             const isMe = player?.id === gameState.myId;
             return (
@@ -83,7 +84,7 @@ export function WaitingRoom() {
           </div>
         )}
         <Button disabled={!isReady} onClick={startGame}>
-          {isReady ? 'START GAME' : `WAITING FOR PLAYERS... (${count}/8)`}
+          {isReady ? 'START GAME' : `WAITING FOR PLAYERS... (${count}/${maxPlayers})`}
         </Button>
       </div>
     </div>

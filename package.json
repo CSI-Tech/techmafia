@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "node --require tsx/cjs server.ts",
-    "build": "next build",
-    "start": "NODE_ENV=production node server.js",
+    "build": "next build && node esbuild.server.mjs",
+    "start": "NODE_ENV=production node dist/server.js",
     "lint": "eslint"
   },
   "dependencies": {
