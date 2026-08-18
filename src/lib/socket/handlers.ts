@@ -394,6 +394,17 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
 
       const updatedTeam = gameManager.proceedToNight(teamId);
       if (updatedTeam) {
+        if (updatedTeam.currentState === 'NIGHT') {
+          updatedTeam.timerEndsAt = Date.now() + 60000;
+          scheduleTransition(teamId, 'NIGHT', 60000, async () => {
+            const t = gameManager.getTeam(teamId);
+            if (t && t.currentState === 'NIGHT') {
+              gameManager.forceResolveNight(teamId);
+              await broadcastGameState(teamId);
+              await checkAndLogNightCompletion(teamId);
+            }
+          });
+        }
         await logEvent(teamId, updatedTeam.roomCode, updatedTeam.currentRound, `Night phase started`);
         await broadcastGameState(teamId);
       }

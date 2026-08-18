@@ -85,7 +85,7 @@ export function MorningResult() {
 
       <div className="p-6 pb-10">
         <Button onClick={startDiscussion}>
-          PROCEED TO ROUND {gameState.currentRound} DISCUSSION
+          {gameState.winner ? 'VIEW GAME RESULTS →' : `PROCEED TO ROUND ${gameState.currentRound} DISCUSSION`}
         </Button>
       </div>
     </div>

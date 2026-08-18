@@ -55,10 +55,8 @@ export function Round1Question() {
     );
   }
 
-  // ── ANSWERED — show submitted confirmation with timer & answer reveal ────
+  // ── ANSWERED — show submitted confirmation with timer ────
   if (phase === 'ANSWERED' && q) {
-    const isCorrect = (submittedAnswer || '').trim().toLowerCase() === (q.answer || '').trim().toLowerCase();
-
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <div className="h-1 w-full bg-primary" />
@@ -69,7 +67,7 @@ export function Round1Question() {
             <div className="inline-block px-4 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider mb-2">
               ROUND 1
             </div>
-            <h1 className="text-2xl font-extrabold text-gray-900">Answer Submitted</h1>
+            <h1 className="text-2xl font-extrabold text-gray-900">ANSWER SUBMITTED</h1>
             <div className="mt-3 inline-block bg-gray-100 border border-gray-200 rounded-2xl px-6 py-2">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">TIME REMAINING</span>
               <span className="text-3xl font-black text-gray-800 font-mono tracking-wider">{timeLeft}</span>
@@ -77,20 +75,11 @@ export function Round1Question() {
           </div>
 
           {/* Your submitted selection */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 mb-4">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 mb-6">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">YOUR SUBMITTED RESPONSE</p>
             <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 font-bold text-lg text-gray-900">
               {submittedAnswer}
             </div>
-          </div>
-
-          {/* ANSWER REVEAL (ROUND 1 ONLY) */}
-          <div className={`rounded-3xl border p-5 mb-6 ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-            <p className="text-xs font-bold uppercase tracking-widest mb-1 text-gray-500">CORRECT ANSWER</p>
-            <p className="text-2xl font-black text-gray-900">{q.answer}</p>
-            <p className={`text-sm font-bold mt-2 ${isCorrect ? 'text-green-700' : 'text-red-600'}`}>
-              {isCorrect ? '✓ Excellent! Your answer is correct.' : '✗ Your answer was incorrect (this will not eliminate you).'}
-            </p>
           </div>
 
           {/* Waiting banner */}
@@ -101,7 +90,7 @@ export function Round1Question() {
               <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
             </div>
             <p className="text-base font-bold text-blue-900">
-              Waiting for Round 1 to complete...
+              ANSWER SUBMITTED
             </p>
             <p className="text-xs text-blue-600 mt-1 font-medium">
               Discussion phase will start automatically when the timer finishes.
