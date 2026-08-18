@@ -537,7 +537,7 @@ export class GameManager {
     const killerId = team.mafiaKillTurnPlayerId;
     if (killerId) {
       const killer = mafiaPlayers.find(m => m.id === killerId);
-      return killer ? killer.nightActionTarget : null;
+      return killer ? (killer.nightActionTarget ?? null) : null;
     }
     const targets = mafiaPlayers
       .map(m => m.nightActionTarget)
