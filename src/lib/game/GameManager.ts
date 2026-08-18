@@ -40,6 +40,7 @@ export class GameManager {
         morningResults: [],
         tieRule: 'NO_ELIMINATION',
         mafiaSelectionRule: 'KILL_ALL',
+        mafiaKillTurnPlayerId: null,
       });
     }
     return this.teams.get(teamId)!;
@@ -72,6 +73,7 @@ export class GameManager {
         morningResults: [],
         tieRule: 'NO_ELIMINATION',
         mafiaSelectionRule: 'KILL_ALL',
+        mafiaKillTurnPlayerId: null,
       });
     }
     return this.teams.get(teamId)!;
@@ -198,11 +200,13 @@ export class GameManager {
     team.currentRound = 1;
     team.timerEndsAt = Date.now() + 120000; // Exactly 2 minutes
     
-    // Select random Round 1 question set
-    const questionSets = loadRound1Questions();
-    if (questionSets.length > 0) {
-      const selected = questionSets[Math.floor(Math.random() * questionSets.length)];
-      team.round1QuestionSetId = selected.id;
+    // Select random Round 1 question set if not already set or set to 'random'
+    if (!team.round1QuestionSetId || team.round1QuestionSetId === 'random') {
+      const questionSets = loadRound1Questions();
+      if (questionSets.length > 0) {
+        const selected = questionSets[Math.floor(Math.random() * questionSets.length)];
+        team.round1QuestionSetId = selected.id;
+      }
     }
 
     // Reset player answer states
@@ -392,6 +396,29 @@ export class GameManager {
     }
 
     team.currentState = 'NIGHT';
+
+    // Decide who gets the Mafia killing turn tonight
+    const aliveMafia = team.players.filter(p => p.role === 'MAFIA' && p.status === 'ALIVE');
+    if (aliveMafia.length > 0) {
+      if (!team.mafiaKillTurnPlayerId) {
+        // First night, pick the first alive mafia
+        team.mafiaKillTurnPlayerId = aliveMafia[0].id;
+      } else {
+        // Find index of previous killer in current alive mafia list
+        const prevId = team.mafiaKillTurnPlayerId;
+        const prevIndex = aliveMafia.findIndex(m => m.id === prevId);
+        if (prevIndex === -1) {
+          // Previous killer is dead or not found, pick the first alive mafia
+          team.mafiaKillTurnPlayerId = aliveMafia[0].id;
+        } else {
+          // Rotate to the next alive mafia
+          const nextIndex = (prevIndex + 1) % aliveMafia.length;
+          team.mafiaKillTurnPlayerId = aliveMafia[nextIndex].id;
+        }
+      }
+    } else {
+      team.mafiaKillTurnPlayerId = null;
+    }
     
     // Pick random Night Quiz
     const quizzes = loadNightQuizzes();
@@ -449,6 +476,10 @@ export class GameManager {
     if (!target || target.status !== 'ALIVE') return false;
 
     if (player.role === 'MAFIA') {
+      // Check if this mafia has killing access
+      if (team.mafiaKillTurnPlayerId && team.mafiaKillTurnPlayerId !== playerId) {
+        return false;
+      }
       // Mafia cannot select themselves or other Mafia
       if (target.role === 'MAFIA') return false;
       player.nightActionTarget = targetId;
@@ -470,9 +501,18 @@ export class GameManager {
 
     const alivePlayers = team.players.filter(p => p.status === 'ALIVE');
     
-    // Check if all alive Mafia have chosen a target
+    // Check if Mafia has chosen a target (only the one with killing access)
+    let mafiaDone = false;
+    const killerId = team.mafiaKillTurnPlayerId;
     const aliveMafia = alivePlayers.filter(p => p.role === 'MAFIA');
-    const mafiaDone = aliveMafia.every(m => m.nightActionTarget !== null);
+    if (aliveMafia.length === 0) {
+      mafiaDone = true;
+    } else if (killerId) {
+      const killer = aliveMafia.find(p => p.id === killerId);
+      mafiaDone = killer ? (killer.nightActionTarget !== null) : true;
+    } else {
+      mafiaDone = aliveMafia.every(m => m.nightActionTarget !== null);
+    }
 
     // Check if alive Investigator has chosen a target
     const aliveInvestigator = alivePlayers.filter(p => p.role === 'INVESTIGATOR');
@@ -494,6 +534,11 @@ export class GameManager {
   }
 
   private getFinalMafiaKillTarget(team: Team, mafiaPlayers: Player[]): string | null {
+    const killerId = team.mafiaKillTurnPlayerId;
+    if (killerId) {
+      const killer = mafiaPlayers.find(m => m.id === killerId);
+      return killer ? killer.nightActionTarget : null;
+    }
     const targets = mafiaPlayers
       .map(m => m.nightActionTarget)
       .filter((t): t is string => t !== null && t !== undefined);
@@ -700,6 +745,8 @@ export class GameManager {
       myMafiaPartner: hideRole ? null : mafiaPartner,
       myRound1Question,
       myNightQuiz,
+      isMyMafiaKillTurn: reqPlayer?.role === 'MAFIA' && team.mafiaKillTurnPlayerId === playerId,
+      mafiaKillTurnPlayerId: reqPlayer?.role === 'MAFIA' ? team.mafiaKillTurnPlayerId : null,
       investigatorResult: reqPlayer?.role === 'INVESTIGATOR' && !hideRole ? team.investigatorResult : null,
       round1Answers:
         team.currentState === 'ROUND_1_DISCUSSION'

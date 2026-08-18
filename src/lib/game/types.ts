@@ -49,4 +49,5 @@ export interface Team {
   maxPlayers: number;
   tieRule: 'NO_ELIMINATION' | 'RANDOM_ELIMINATION';
   mafiaSelectionRule: 'KILL_ALL' | 'AGREE_OR_NO_KILL';
+  mafiaKillTurnPlayerId?: string | null;
 }

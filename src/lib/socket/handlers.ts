@@ -76,6 +76,7 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
       eliminatedThisRound: team.eliminatedThisRound,
       eliminatedRoleThisRound: team.eliminatedRoleThisRound,
       advancingPlayers: team.advancingPlayers,
+      mafiaKillTurnPlayerId: team.mafiaKillTurnPlayerId,
     });
   };
 
@@ -144,6 +145,7 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
       eliminatedThisRound: team.eliminatedThisRound,
       eliminatedRoleThisRound: team.eliminatedRoleThisRound,
       advancingPlayers: team.advancingPlayers,
+      mafiaKillTurnPlayerId: team.mafiaKillTurnPlayerId,
     }));
     socket.emit('adminSnapshot', snapshot);
 

@@ -81,6 +81,26 @@ export function NightPhase() {
 
   // ── MAFIA ────────────────────────────────────────────────────────────────
   if (role === 'MAFIA') {
+    const isMyTurn = gameState.isMyMafiaKillTurn;
+    if (!isMyTurn) {
+      const partnerName = gameState.myMafiaPartner || 'your partner';
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 p-6 gap-6">
+          <div className="text-center">
+            <p className="text-5xl mb-4">💤</p>
+            <div className="inline-block px-4 py-1 bg-red-900/50 text-primary rounded-full text-xs font-bold uppercase tracking-wider mb-3">
+              Night Phase · Mafia
+            </div>
+            <h1 className="text-2xl font-extrabold text-white">Sleeping...</h1>
+            <p className="text-slate-400 text-sm font-medium mt-2">
+              It is <span className="text-primary font-bold">{partnerName}</span>'s turn to choose the kill target tonight.
+            </p>
+            <p className="text-slate-500 text-xs mt-3">Waiting for the action to complete...</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen flex flex-col bg-slate-950">
         <div className="h-1 w-full bg-primary" />
@@ -88,7 +108,7 @@ export function NightPhase() {
           <div className="text-center mb-6 pt-4">
             <p className="text-4xl mb-3">🌙</p>
             <div className="inline-block px-4 py-1 bg-red-900/50 text-primary rounded-full text-xs font-bold uppercase tracking-wider mb-3">
-              Night Phase · Mafia
+              Night Phase · Mafia (Active)
             </div>
             <h1 className="text-2xl font-extrabold text-white">Choose Your Target</h1>
             <p className="text-slate-400 text-sm mt-1 font-medium">Select one player to eliminate tonight.</p>

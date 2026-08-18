@@ -63,6 +63,8 @@ export type SanitizedGameState = {
   myRound1Question: QuestionData | null;
   myNightQuiz: QuestionData | null;
   investigatorResult: string | null;
+  isMyMafiaKillTurn?: boolean | null;
+  mafiaKillTurnPlayerId?: string | null;
 
   // Round 1 Discussion answers (only populated during Round 1 Discussion)
   round1Answers?: { playerId: string; playerName: string; answerText: string }[] | null;
@@ -112,6 +114,7 @@ export type AdminTeamUpdate = {
   eliminatedThisRound: string | null;
   eliminatedRoleThisRound: Role;
   advancingPlayers: string[];
+  mafiaKillTurnPlayerId?: string | null;
 };
 
 /** Team record returned from REST /api/admin/teams */

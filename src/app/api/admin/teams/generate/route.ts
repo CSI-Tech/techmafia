@@ -7,7 +7,7 @@ import { logEvent } from '@/lib/services/GameLogger';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { teamNumber, maxPlayers: rawMaxPlayers } = body;
+    const { teamNumber, maxPlayers: rawMaxPlayers, questionSetId } = body;
 
     if (!teamNumber?.trim()) {
       return NextResponse.json({ success: false, message: 'teamNumber is required' }, { status: 400 });
@@ -35,6 +35,9 @@ export async function POST(request: Request) {
     await logEvent(teamId, roomCode, 0, 'Team created', `Team ${teamNumber.trim()} room generated (${maxPlayers} players)`);
 
     const team = gameManager.getOrCreateTeam(teamId, roomCode, maxPlayers);
+    if (questionSetId && questionSetId !== 'random') {
+      team.round1QuestionSetId = questionSetId;
+    }
     await saveTeamLiveState(teamId, team);
 
     // Broadcast team creation to all active admin clients

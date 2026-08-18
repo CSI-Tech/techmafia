@@ -9,6 +9,24 @@ export default function GenerateTeam() {
   const [maxPlayers, setMaxPlayers] = useState(8);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ teamId: string; roomCode: string; error?: string } | null>(null);
+  
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [selectedQuestionSetId, setSelectedQuestionSetId] = useState('random');
+
+  React.useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const res = await fetch('/api/admin/questions');
+        const data = await res.json();
+        if (data.success) {
+          setQuestions(data.questions);
+        }
+      } catch (err) {
+        console.error('Failed to fetch questions:', err);
+      }
+    };
+    fetchQuestions();
+  }, []);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +41,7 @@ export default function GenerateTeam() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ teamNumber, maxPlayers })
+        body: JSON.stringify({ teamNumber, maxPlayers, questionSetId: selectedQuestionSetId })
       });
       
       const data = await res.json();
@@ -31,6 +49,7 @@ export default function GenerateTeam() {
       if (data.success) {
         setResult({ teamId: data.teamId, roomCode: data.roomCode });
         setTeamNumber('');
+        setSelectedQuestionSetId('random');
         await refreshTeams(); // refresh list in context
       } else {
         setResult({ teamId: '', roomCode: '', error: data.message || 'Failed to generate team' });
@@ -88,6 +107,38 @@ export default function GenerateTeam() {
                 <option value={7}>7 Players</option>
                 <option value={8}>8 Players</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 uppercase tracking-wide mb-2">
+                Round 1 Question Set
+              </label>
+              <select
+                value={selectedQuestionSetId}
+                onChange={(e) => setSelectedQuestionSetId(e.target.value)}
+                className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 focus:outline-none focus:border-primary focus:bg-white transition-colors"
+              >
+                <option value="random">Random Question Set (Default)</option>
+                {questions.map((q) => (
+                  <option key={q.id} value={q.id}>
+                    {q.category} Set ({q.id})
+                  </option>
+                ))}
+              </select>
+
+              {selectedQuestionSetId !== 'random' && questions.find(q => q.id === selectedQuestionSetId) && (
+                <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm space-y-3">
+                  <p className="font-bold text-gray-700 uppercase tracking-wider text-xs">Question Preview</p>
+                  <div>
+                    <span className="font-extrabold text-blue-600 block mb-0.5">Civilian Question:</span>
+                    <p className="text-gray-800 font-medium">{questions.find(q => q.id === selectedQuestionSetId).civilian.question}</p>
+                  </div>
+                  <div className="border-t border-gray-200 pt-2">
+                    <span className="font-extrabold text-red-600 block mb-0.5">Mafia Question:</span>
+                    <p className="text-gray-800 font-medium">{questions.find(q => q.id === selectedQuestionSetId).mafia.question}</p>
+                  </div>
+                </div>
+              )}
             </div>
             
             <Button 
