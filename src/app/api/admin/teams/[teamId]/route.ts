@@ -43,3 +43,38 @@ export async function GET(request: Request, { params }: { params: Promise<{ team
     return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ teamId: string }> }) {
+  try {
+    const { teamId } = await params;
+    const { deleteRoom } = require('@/lib/db/dbHelper');
+
+    // 1. Delete from database
+    await deleteRoom(teamId);
+
+    // 2. Delete from in-memory game manager
+    gameManager.deleteTeam(teamId);
+
+    // 3. Notify and evict player sockets
+    const globalForSockets = global as unknown as { io?: any; adminNs?: any };
+    if (globalForSockets.io) {
+      globalForSockets.io.to(teamId).emit('roomDeleted');
+      const roomSockets = globalForSockets.io.sockets.adapter.rooms.get(teamId);
+      if (roomSockets) {
+        for (const socketId of roomSockets) {
+          const s = globalForSockets.io.sockets.sockets.get(socketId);
+          if (s) s.leave(teamId);
+        }
+      }
+    }
+
+    if (globalForSockets.adminNs) {
+      globalForSockets.adminNs.emit('adminTeamDeleted', { teamId });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('[API DELETE team] error:', err);
+    return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
+  }
+}

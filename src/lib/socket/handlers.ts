@@ -147,6 +147,38 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
     }));
     socket.emit('adminSnapshot', snapshot);
 
+    socket.on('kickPlayer', async ({ teamId, playerId }: { teamId: string; playerId: string }) => {
+      try {
+        console.log(`[Admin] Kick player ${playerId} from team ${teamId}`);
+        const team = gameManager.getTeam(teamId);
+        if (!team) return;
+
+        const player = team.players.find(p => p.id === playerId);
+        if (!player) return;
+
+        const playerName = player.name;
+        team.players = team.players.filter(p => p.id !== playerId);
+
+        const playerSocket = io.sockets.sockets.get(playerId);
+        if (playerSocket) {
+          playerSocket.emit('playerKicked');
+          playerSocket.leave(teamId);
+        }
+
+        await logEvent(teamId, team.roomCode, team.currentRound, `Player kicked by admin: ${playerName}`);
+        
+        const maxPlayers = team.maxPlayers || 8;
+        await updateRoomStatus(teamId, {
+          playerNames: team.players.map(p => p.name),
+          status: team.players.length >= maxPlayers ? 'READY' : 'WAITING',
+        });
+
+        await broadcastGameState(teamId);
+      } catch (err) {
+        console.error('[Admin Socket] kickPlayer error:', err);
+      }
+    });
+
     socket.on('disconnect', () => console.log(`[Admin WS -] ${socket.id}`));
   });
 
@@ -204,6 +236,15 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
       } catch (err) {
         console.error('[Socket] joinRoom error:', err);
         socket.emit('joinError', 'Invalid login code');
+      }
+    });
+
+    socket.on('leaveRoom', () => {
+      if (socket.data.teamId) {
+        socket.leave(socket.data.teamId);
+        socket.data.teamId = undefined;
+        socket.data.roomCode = undefined;
+        socket.data.playerName = undefined;
       }
     });
 

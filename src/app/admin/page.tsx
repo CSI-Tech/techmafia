@@ -2,9 +2,29 @@
 import React from 'react';
 import { useAdminSocket } from '@/components/providers/AdminSocketContext';
 import { TeamCard } from '@/components/admin/TeamCard';
+import { Button } from '@/components/Button';
 
 export default function AdminDashboard() {
-  const { teams } = useAdminSocket();
+  const { teams, refreshTeams } = useAdminSocket();
+
+  const handleRevokeAllRooms = async () => {
+    if (!confirm('WARNING: Are you sure you want to delete ALL rooms and clear the entire database? This action is irreversible.')) return;
+    try {
+      const res = await fetch('/api/admin/teams', {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('All rooms revoked and database cleared.');
+        refreshTeams();
+      } else {
+        alert(data.message || 'Failed to revoke rooms');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error revoking rooms');
+    }
+  };
 
   // Calculate summary metrics
   const activeTeams = teams.filter(t => t.status !== 'COMPLETED').length;
@@ -61,6 +81,22 @@ export default function AdminDashboard() {
             No live games at the moment
           </div>
         )}
+      </section>
+
+      {/* System Administration Section */}
+      <section className="bg-red-50 p-6 rounded-2xl border border-red-200 space-y-4">
+        <div>
+          <h3 className="text-xl font-bold text-red-800 mb-1">System Administration</h3>
+          <p className="text-sm text-red-700">
+            Warning: Revoking entire database rooms will permanently delete all rooms and their history/logs. Active players in any live rooms will be kicked immediately.
+          </p>
+        </div>
+        <Button 
+          onClick={handleRevokeAllRooms}
+          className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-xl border-none transition-colors shadow-sm"
+        >
+          REVOKE ENTIRE DB ROOMS
+        </Button>
       </section>
       
     </div>

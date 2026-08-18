@@ -314,7 +314,7 @@ export default function JoinPage() {
         <div className="flex-1 flex flex-col p-6 pt-8">
           <Header />
 
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-5">
+          <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-white/20 p-6 space-y-5">
             <div className="flex items-center gap-3 mb-1">
               <button
                 id="btn-back-from-player"
@@ -531,7 +531,7 @@ export default function JoinPage() {
       <div className="flex-1 flex flex-col p-6 pt-12">
         <Header />
 
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-5">
+        <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-white/20 p-6 space-y-5">
           <div className="flex items-center gap-3 mb-1">
             <button
               id="btn-back-from-admin"

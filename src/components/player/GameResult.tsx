@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '../Button';
 
 export function GameResult() {
-  const { gameState } = useSocket();
+  const { gameState, resetSession } = useSocket();
   const router = useRouter();
   if (!gameState) return null;
 
@@ -122,7 +122,15 @@ export function GameResult() {
       </div>
 
       <div className="p-6 pb-10">
-        <Button variant="ghost" onClick={() => router.push('/')}>Play Again</Button>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            resetSession();
+            router.push('/');
+          }}
+        >
+          Play Again
+        </Button>
       </div>
     </div>
   );

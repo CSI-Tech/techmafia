@@ -17,6 +17,7 @@ interface SocketContextProps {
   submitNightQuiz: (answer: string) => void;
   proceedToNight: () => void;
   clearError: () => void;
+  resetSession: () => void;
 }
 
 const SocketContext = createContext<SocketContextProps | undefined>(undefined);
@@ -64,6 +65,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     s.on('error', (msg: string) => {
       setError(msg);
+    });
+
+    s.on('roomDeleted', () => {
+      setError('This room has been deleted by the admin.');
+      setGameState(null);
+    });
+
+    s.on('playerKicked', () => {
+      setError('You have been kicked from this room by the admin.');
+      setGameState(null);
     });
 
     setTimeout(() => {
@@ -127,12 +138,21 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const clearError = () => setError(null);
 
+  const resetSession = () => {
+    sessionStorage.removeItem('techmafia_loginCode');
+    sessionStorage.removeItem('techmafia_teamId');
+    sessionStorage.removeItem('techmafia_playerSessionId');
+    setGameState(null);
+    setError(null);
+    socket?.emit('leaveRoom');
+  };
+
   return (
     <SocketContext.Provider value={{
       socket, connected, gameState, error,
       joinRoom, startGame, startDiscussion, submitVote,
       submitRound1Answer, submitNightAction, submitNightQuiz,
-      proceedToNight, clearError,
+      proceedToNight, clearError, resetSession,
     }}>
       {children}
     </SocketContext.Provider>

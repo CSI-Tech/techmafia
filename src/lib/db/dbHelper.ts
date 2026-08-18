@@ -89,3 +89,15 @@ export async function saveTeamLiveState(teamId: string, teamState: any): Promise
   await ensureConnected();
   await GameRoom.updateOne({ teamId }, { $set: { liveState: teamState } });
 }
+
+export async function deleteRoom(teamId: string): Promise<void> {
+  await ensureConnected();
+  await GameRoom.deleteOne({ teamId });
+  await GameLog.deleteMany({ teamId });
+}
+
+export async function revokeAllRooms(): Promise<void> {
+  await ensureConnected();
+  await GameRoom.deleteMany({});
+  await GameLog.deleteMany({});
+}

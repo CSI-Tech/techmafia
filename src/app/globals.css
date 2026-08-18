@@ -21,3 +21,31 @@
     margin: 0;
   }
 }
+
+.bg-background, .bg-amber-50 {
+  background-image: url('/8402761a-d2a2-4a60-ae68-7dbdbdd3b978.png') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+
+/* Glassmorphism for daytime containers & cards */
+.bg-background .bg-white.rounded-3xl, 
+.bg-amber-50 .bg-white.rounded-3xl,
+.bg-background .bg-white.rounded-2xl,
+.bg-amber-50 .bg-white.rounded-2xl {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.bg-background .bg-gray-50.rounded-2xl,
+.bg-amber-50 .bg-gray-50.rounded-2xl,
+.bg-background .bg-gray-50.rounded-3xl,
+.bg-amber-50 .bg-gray-50.rounded-3xl,
+.bg-background .bg-gray-50\/50.rounded-2xl {
+  background-color: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(12px) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}

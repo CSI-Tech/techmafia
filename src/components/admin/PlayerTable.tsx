@@ -4,9 +4,10 @@ import type { AdminPlayer } from '@/types';
 interface PlayerTableProps {
   players: AdminPlayer[];
   currentState?: string;
+  onKick?: (playerId: string, playerName: string) => void;
 }
 
-export function PlayerTable({ players, currentState }: PlayerTableProps) {
+export function PlayerTable({ players, currentState, onKick }: PlayerTableProps) {
   if (!players || players.length === 0) {
     return (
       <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-300">
@@ -141,6 +142,9 @@ export function PlayerTable({ players, currentState }: PlayerTableProps) {
             {hasStarted && (
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Challenge Response / Action</th>
             )}
+            {onKick && (
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -181,6 +185,18 @@ export function PlayerTable({ players, currentState }: PlayerTableProps) {
               {hasStarted && (
                 <td className="px-6 py-4">
                   {renderChallengeResponse(p, currentState)}
+                </td>
+              )}
+              {onKick && (
+                <td className="px-6 py-4 text-right">
+                  {p.status === 'ALIVE' && (
+                    <button
+                      onClick={() => onKick(p.id || '', p.name)}
+                      className="text-xs font-bold text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 transition-colors"
+                    >
+                      Kick
+                    </button>
+                  )}
                 </td>
               )}
             </tr>

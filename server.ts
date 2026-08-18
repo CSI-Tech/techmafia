@@ -34,8 +34,9 @@ app.prepare().then(() => {
 
   // Admin namespace
   const adminNs = io.of('/admin');
-  const globalForSockets = global as unknown as { adminNs?: typeof adminNs };
+  const globalForSockets = global as unknown as { adminNs?: typeof adminNs; io?: typeof io };
   globalForSockets.adminNs = adminNs;
+  globalForSockets.io = io;
 
   // Setup handlers
   setupSocketHandlers(io, adminNs);

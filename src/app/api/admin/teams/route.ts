@@ -37,3 +37,30 @@ export async function GET() {
     return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
   }
 }
+
+export async function DELETE() {
+  try {
+    const { revokeAllRooms } = require('@/lib/db/dbHelper');
+
+    // 1. Delete all rooms from database
+    await revokeAllRooms();
+
+    // 2. Clear in-memory game manager
+    gameManager.clearAllTeams();
+
+    // 3. Notify and evict player sockets
+    const globalForSockets = global as unknown as { io?: any; adminNs?: any };
+    if (globalForSockets.io) {
+      globalForSockets.io.emit('roomDeleted');
+    }
+
+    if (globalForSockets.adminNs) {
+      globalForSockets.adminNs.emit('adminSnapshot', []);
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('[API DELETE all teams] error:', err);
+    return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
+  }
+}

@@ -11,7 +11,7 @@ import { useAdminSocket } from '@/components/providers/AdminSocketContext';
 export default function TeamDetail() {
   const { teamId } = useParams<{ teamId: string }>();
   const router = useRouter();
-  const { liveTeams } = useAdminSocket();
+  const { liveTeams, kickPlayer } = useAdminSocket();
   const [team, setTeam] = useState<AdminTeam | null>(null);
   const [logs, setLogs] = useState<GameLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +129,31 @@ export default function TeamDetail() {
         }))
       : []);
 
+  const handleKickPlayer = (playerId: string, playerName: string) => {
+    if (!confirm(`Are you sure you want to kick ${playerName}?`)) return;
+    if (kickPlayer) {
+      kickPlayer(teamId, playerId);
+    }
+  };
+
+  const handleDeleteRoom = async () => {
+    if (!confirm('Are you sure you want to delete this room? This action is permanent and cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/admin/teams/${teamId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        router.push('/admin/games');
+      } else {
+        alert(data.message || 'Failed to delete room');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error deleting room');
+    }
+  };
+
   return (
     <div className="p-6 md:p-10 max-w-5xl mx-auto space-y-10">
       {/* Header */}
@@ -147,14 +172,22 @@ export default function TeamDetail() {
           <p className="text-gray-500 font-medium mt-1">Room Code: <span className="font-mono font-bold text-gray-900">{team.roomCode}</span></p>
         </div>
         
-        {live && !isCompleted && (
-          <div className="bg-white px-6 py-4 rounded-xl shadow-sm border border-gray-200 text-center min-w-[150px]">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Timer</p>
-            <p className="text-3xl font-bold text-primary tabular-nums">
-              {timeLeft !== null ? formatTime(timeLeft) : '--:--'}
-            </p>
-          </div>
-        )}
+        <div className="flex items-center gap-4 self-end">
+          {live && !isCompleted && (
+            <div className="bg-white px-6 py-4 rounded-xl shadow-sm border border-gray-200 text-center min-w-[150px]">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Timer</p>
+              <p className="text-3xl font-bold text-primary tabular-nums">
+                {timeLeft !== null ? formatTime(timeLeft) : '--:--'}
+              </p>
+            </div>
+          )}
+          <Button 
+            onClick={handleDeleteRoom}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-3.5 rounded-xl shadow-sm border-none transition-colors"
+          >
+            DELETE ROOM
+          </Button>
+        </div>
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -260,7 +293,11 @@ export default function TeamDetail() {
           {/* Player Monitoring Table */}
           <section>
             <h3 className="text-xl font-bold text-gray-900 mb-4">Player Monitoring</h3>
-            <PlayerTable players={live?.players || []} currentState={live?.currentState} />
+            <PlayerTable 
+              players={live?.players || []} 
+              currentState={live?.currentState} 
+              onKick={handleKickPlayer}
+            />
           </section>
 
           {/* Elimination History */}

@@ -3,10 +3,8 @@ import { PublicPlayer } from '@/types';
 import { loadRound1Questions, loadNightQuizzes } from './content';
 
 export function getRoleCountsForTeamSize(maxPlayers: number): { mafia: number; investigator: number; civilian: number } {
-  if (maxPlayers <= 6) {
+  if (maxPlayers <= 7) {
     return { mafia: 1, investigator: 1, civilian: Math.max(0, maxPlayers - 2) };
-  } else if (maxPlayers === 7) {
-    return { mafia: 2, investigator: 1, civilian: 4 };
   } else {
     return { mafia: 2, investigator: 1, civilian: Math.max(0, maxPlayers - 3) };
   }
@@ -85,6 +83,14 @@ export class GameManager {
 
   getAllTeams(): Team[] {
     return Array.from(this.teams.values());
+  }
+
+  deleteTeam(teamId: string): boolean {
+    return this.teams.delete(teamId);
+  }
+
+  clearAllTeams(): void {
+    this.teams.clear();
   }
 
   joinTeam(

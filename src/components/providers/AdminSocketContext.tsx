@@ -11,6 +11,7 @@ interface AdminSocketContextProps {
   liveTeams: Record<string, AdminTeamUpdate>;   // keyed by teamId
   teams: AdminTeam[];                           // merged REST + live
   refreshTeams: () => Promise<void>;
+  kickPlayer: (teamId: string, playerId: string) => void;
 }
 
 const AdminSocketContext = createContext<AdminSocketContextProps | undefined>(undefined);
@@ -19,6 +20,7 @@ export const AdminSocketProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [connected, setConnected] = useState(false);
   const [liveTeams, setLiveTeams] = useState<Record<string, AdminTeamUpdate>>({});
   const [teams, setTeams] = useState<AdminTeam[]>([]);
+  const socketRef = React.useRef<Socket | null>(null);
 
   const refreshTeams = async () => {
     try {
@@ -39,6 +41,7 @@ export const AdminSocketProvider: React.FC<{ children: React.ReactNode }> = ({ c
       reconnectionDelay: 500,
       reconnectionAttempts: 20,
     });
+    socketRef.current = socket;
 
     socket.on('connect', () => {
       setConnected(true);
@@ -59,9 +62,28 @@ export const AdminSocketProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (update.currentState === 'GAME_COMPLETE') refreshTeams();
     });
 
-    return () => { socket.disconnect(); };
+    // Deletion updates
+    socket.on('adminTeamDeleted', ({ teamId }: { teamId: string }) => {
+      setLiveTeams((prev) => {
+        const copy = { ...prev };
+        delete copy[teamId];
+        return copy;
+      });
+      refreshTeams();
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const kickPlayer = (teamId: string, playerId: string) => {
+    if (socketRef.current) {
+      socketRef.current.emit('kickPlayer', { teamId, playerId });
+    }
+  };
 
   const mergedTeams = [...teams];
 
@@ -98,7 +120,7 @@ export const AdminSocketProvider: React.FC<{ children: React.ReactNode }> = ({ c
   });
 
   return (
-    <AdminSocketContext.Provider value={{ connected, liveTeams, teams: mergedTeams, refreshTeams }}>
+    <AdminSocketContext.Provider value={{ connected, liveTeams, teams: mergedTeams, refreshTeams, kickPlayer }}>
       {children}
     </AdminSocketContext.Provider>
   );
