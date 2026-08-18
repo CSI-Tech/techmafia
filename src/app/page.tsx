@@ -273,8 +273,7 @@ export default function JoinPage() {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <div className="h-1 w-full bg-primary" />
-        <div className="flex-1 flex flex-col p-6 pt-12">
-          <Header />
+        <div className="flex-1 flex flex-col justify-center p-6 pb-20">
 
           <div className="space-y-2 mb-3">
             <p className="text-center text-sm text-gray-400 font-medium uppercase tracking-widest">
@@ -312,7 +311,6 @@ export default function JoinPage() {
       <div className="min-h-screen flex flex-col bg-background">
         <div className="h-1 w-full bg-primary" />
         <div className="flex-1 flex flex-col p-6 pt-8">
-          <Header />
 
           <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-white/20 p-6 space-y-5">
             <div className="flex items-center gap-3 mb-1">
@@ -529,7 +527,6 @@ export default function JoinPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <div className="h-1 w-full bg-primary" />
       <div className="flex-1 flex flex-col p-6 pt-12">
-        <Header />
 
         <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border border-white/20 p-6 space-y-5">
           <div className="flex items-center gap-3 mb-1">
