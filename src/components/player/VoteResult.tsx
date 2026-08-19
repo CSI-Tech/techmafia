@@ -126,7 +126,7 @@ export function VoteResult() {
 
       <div className="p-6 pb-10">
         <Button onClick={handleNext}>
-          {isRound1Result ? 'REVEAL YOUR ROLE →' : 'PROCEED TO NIGHT →'}
+          {gameState.winner ? 'VIEW GAME RESULTS →' : (isRound1Result ? 'REVEAL YOUR ROLE →' : 'PROCEED TO NIGHT →')}
         </Button>
       </div>
     </div>

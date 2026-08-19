@@ -396,6 +396,11 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
 
       const updatedTeam = gameManager.proceedToNight(teamId);
       if (updatedTeam) {
+        if (updatedTeam.currentState === 'GAME_COMPLETE') {
+          await logGameComplete(teamId, updatedTeam);
+          await broadcastGameState(teamId);
+          return;
+        }
         if (updatedTeam.currentState === 'NIGHT') {
           updatedTeam.timerEndsAt = Date.now() + 60000;
           scheduleTransition(teamId, 'NIGHT', 60000, async () => {
@@ -496,6 +501,12 @@ export function setupSocketHandlers(io: Server, adminNs: Namespace) {
 
       const updatedTeam = gameManager.startDiscussion(teamId);
       if (!updatedTeam) return;
+
+      if (updatedTeam.currentState === 'GAME_COMPLETE') {
+        await logGameComplete(teamId, updatedTeam);
+        await broadcastGameState(teamId);
+        return;
+      }
 
       await broadcastGameState(teamId);
       await logEvent(teamId, updatedTeam.roomCode, updatedTeam.currentRound, `Discussion Round ${updatedTeam.currentRound} started`);

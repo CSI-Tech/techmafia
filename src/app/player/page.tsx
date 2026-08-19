@@ -32,7 +32,7 @@ import { GameResult } from '@/components/player/GameResult';
  * GAME_COMPLETE                → GameResult
  */
 export default function PlayerPortal() {
-  const { gameState, connected, error } = useSocket();
+  const { gameState, connected, error, resetSession } = useSocket();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
@@ -158,8 +158,23 @@ export default function PlayerPortal() {
   };
 
   return (
-    <div className="max-w-sm mx-auto min-h-screen">
+    <div className="max-w-sm mx-auto min-h-screen relative">
       <ConnectionBanner connected={connected} />
+      
+      {gameState && (
+        <button
+          onClick={() => {
+            if (confirm('Are you sure you want to leave the room?')) {
+              resetSession();
+              router.push('/');
+            }
+          }}
+          className="absolute top-4 right-4 z-50 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200/80 text-[10px] font-black text-red-500 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all uppercase tracking-wider shadow-sm active:scale-95"
+        >
+          Leave Room
+        </button>
+      )}
+
       {renderScreen()}
     </div>
   );

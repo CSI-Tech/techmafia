@@ -259,6 +259,11 @@ export class GameManager {
     const team = this.teams.get(teamId);
     if (!team) return null;
 
+    if (team.winner !== null) {
+      team.currentState = 'GAME_COMPLETE';
+      return team;
+    }
+
     if (team.currentRound === 1) {
       team.currentState = 'ROUND_1_DISCUSSION';
     } else {
@@ -380,14 +385,19 @@ export class GameManager {
     }
 
     // Check win condition after elimination
-    this.checkWinCondition(teamId);
+    this.checkWinCondition(teamId, false);
 
     return team;
   }
 
   proceedToNight(teamId: string): Team | null {
     const team = this.teams.get(teamId);
-    if (!team || team.winner !== null) return null;
+    if (!team) return null;
+
+    if (team.winner !== null) {
+      team.currentState = 'GAME_COMPLETE';
+      return team;
+    }
 
     // If we just finished ROUND_1_RESULT, transition to ROLE_REVEAL first, then NIGHT
     if (team.currentState === 'ROUND_1_RESULT') {
