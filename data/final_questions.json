@@ -1,0 +1,144 @@
+{
+  "sets": [
+    {
+      "id": "linux_distro_regular_vs_cyber",
+      "category": "Linux Distributions",
+      "civilian": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a Linux distribution used for regular use.",
+        "answer": "Ubuntu"
+      },
+      "mafia": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a Linux distribution used for cybersecurity.",
+        "answer": "Kali Linux"
+      }
+    },
+    {
+      "id": "linux_distro_gaming_vs_dev",
+      "category": "Linux Distributions",
+      "civilian": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a Linux distribution suitable for gaming.",
+        "answer": "SteamOS"
+      },
+      "mafia": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a Linux distribution suitable for development or machine learning.",
+        "answer": "Ubuntu"
+      }
+    },
+    {
+      "id": "linux_pros_cons_1",
+      "category": "Linux Pros & Cons",
+      "civilian": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a thing people say Linux is good for.",
+        "answer": "Servers"
+      },
+      "mafia": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a thing people say make Linux hard to use.",
+        "answer": "Terminal"
+      }
+    },
+    {
+      "id": "network_troubleshooting",
+      "category": "Networking",
+      "civilian": {
+        "type": "TYPE_ANSWER",
+        "question": "Name something you would check when Wi-Fi isn't working.",
+        "answer": "Router"
+      },
+      "mafia": {
+        "type": "TYPE_ANSWER",
+        "question": "Name something you would check when the internet is working but a website isn't.",
+        "answer": "DNS"
+      }
+    },
+    {
+      "id": "device_data_security",
+      "category": "Security",
+      "civilian": {
+        "type": "TYPE_ANSWER",
+        "question": "Name something to keep your device secure.",
+        "answer": "Antivirus"
+      },
+      "mafia": {
+        "type": "TYPE_ANSWER",
+        "question": "Name something you do to keep your data safe online.",
+        "answer": "VPN"
+      }
+    },
+    {
+      "id": "database_structures",
+      "category": "Databases",
+      "civilian": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a database that stores data in tables.",
+        "answer": "MySQL"
+      },
+      "mafia": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a database that stores data as documents.",
+        "answer": "MongoDB"
+      }
+    },
+    {
+      "id": "linux_pros_cons_2",
+      "category": "Linux Pros & Cons",
+      "civilian": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a thing people say Linux is good for.",
+        "answer": "Security"
+      },
+      "mafia": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a thing people say make Linux hard to use.",
+        "answer": "Command Line"
+      }
+    },
+    {
+      "id": "os_strengths",
+      "category": "Operating Systems",
+      "civilian": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a thing Windows is great at.",
+        "answer": "Gaming"
+      },
+      "mafia": {
+        "type": "TYPE_ANSWER",
+        "question": "Name a thing MacOS is great at.",
+        "answer": "Design"
+      }
+    },
+    {
+      "id": "tech_companies",
+      "category": "Companies",
+      "civilian": {
+        "type": "TYPE_ANSWER",
+        "question": "What company comes to mind for AI?",
+        "answer": "OpenAI"
+      },
+      "mafia": {
+        "type": "TYPE_ANSWER",
+        "question": "What company comes to mind for GPUs?",
+        "answer": "NVIDIA"
+      }
+    },
+    {
+      "id": "software_models",
+      "category": "Software",
+      "civilian": {
+        "type": "TYPE_ANSWER",
+        "question": "Name something people like about open-source software other than they being free.",
+        "answer": "Customization"
+      },
+      "mafia": {
+        "type": "TYPE_ANSWER",
+        "question": "Name something people like about commercial software.",
+        "answer": "Support"
+      }
+    }
+  ]
+}

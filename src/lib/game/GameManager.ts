@@ -357,7 +357,6 @@ export class GameManager {
     let tie = false;
 
     for (const [name, count] of Object.entries(counts)) {
-      if (name === 'NO_VOTE') continue;
       if (count > maxVotes) {
         maxVotes = count;
         eliminatedName = name;
@@ -367,10 +366,32 @@ export class GameManager {
       }
     }
 
-    if (tie && team.tieRule === 'NO_ELIMINATION') {
-      team.eliminatedThisRound = null;
-      team.eliminatedRoleThisRound = null;
-    } else if (eliminatedName) {
+    if (tie) {
+      if (team.tieRule === 'NO_ELIMINATION') {
+        team.eliminatedThisRound = null;
+        team.eliminatedRoleThisRound = null;
+      } else {
+        // RANDOM_ELIMINATION: select randomly among the tied candidates with maxVotes, excluding 'NO_VOTE'
+        const tiedCandidates = Object.entries(counts)
+          .filter(([name, count]) => count === maxVotes && name !== 'NO_VOTE')
+          .map(([name]) => name);
+        
+        if (tiedCandidates.length > 0) {
+          const selectedName = tiedCandidates[Math.floor(Math.random() * tiedCandidates.length)];
+          const eliminated = team.players.find((p) => p.name === selectedName);
+          if (eliminated) {
+            eliminated.status = 'DEAD';
+            eliminated.eliminatedRound = team.currentRound;
+            eliminated.eliminatedCause = 'VOTED_OUT';
+            team.eliminatedThisRound = selectedName;
+            team.eliminatedRoleThisRound = eliminated.role;
+          }
+        } else {
+          team.eliminatedThisRound = null;
+          team.eliminatedRoleThisRound = null;
+        }
+      }
+    } else if (eliminatedName && eliminatedName !== 'NO_VOTE') {
       const eliminated = team.players.find((p) => p.name === eliminatedName);
       if (eliminated) {
         eliminated.status = 'DEAD';
@@ -487,7 +508,8 @@ export class GameManager {
 
     if (player.role === 'MAFIA') {
       // Check if this mafia has killing access
-      if (team.mafiaKillTurnPlayerId && team.mafiaKillTurnPlayerId !== playerId) {
+      const aliveMafia = team.players.filter(p => p.role === 'MAFIA' && p.status === 'ALIVE');
+      if (aliveMafia.length > 1 && team.mafiaKillTurnPlayerId && team.mafiaKillTurnPlayerId !== playerId) {
         return false;
       }
       // Mafia cannot select themselves or other Mafia
@@ -511,17 +533,21 @@ export class GameManager {
 
     const alivePlayers = team.players.filter(p => p.status === 'ALIVE');
     
-    // Check if Mafia has chosen a target (only the one with killing access)
+    // Check if Mafia has chosen a target
     let mafiaDone = false;
-    const killerId = team.mafiaKillTurnPlayerId;
     const aliveMafia = alivePlayers.filter(p => p.role === 'MAFIA');
     if (aliveMafia.length === 0) {
       mafiaDone = true;
-    } else if (killerId) {
-      const killer = aliveMafia.find(p => p.id === killerId);
-      mafiaDone = killer ? (killer.nightActionTarget !== null) : true;
+    } else if (aliveMafia.length === 1) {
+      mafiaDone = aliveMafia[0].nightActionTarget !== null;
     } else {
-      mafiaDone = aliveMafia.every(m => m.nightActionTarget !== null);
+      const killerId = team.mafiaKillTurnPlayerId;
+      if (killerId) {
+        const killer = aliveMafia.find(p => p.id === killerId);
+        mafiaDone = killer ? (killer.nightActionTarget !== null) : true;
+      } else {
+        mafiaDone = aliveMafia.every(m => m.nightActionTarget !== null);
+      }
     }
 
     // Check if alive Investigator has chosen a target
@@ -544,6 +570,9 @@ export class GameManager {
   }
 
   private getFinalMafiaKillTarget(team: Team, mafiaPlayers: Player[]): string | null {
+    if (mafiaPlayers.length === 1) {
+      return mafiaPlayers[0].nightActionTarget ?? null;
+    }
     const killerId = team.mafiaKillTurnPlayerId;
     if (killerId) {
       const killer = mafiaPlayers.find(m => m.id === killerId);
@@ -755,7 +784,7 @@ export class GameManager {
       myMafiaPartner: hideRole ? null : mafiaPartner,
       myRound1Question,
       myNightQuiz,
-      isMyMafiaKillTurn: reqPlayer?.role === 'MAFIA' && team.mafiaKillTurnPlayerId === playerId,
+      isMyMafiaKillTurn: reqPlayer?.role === 'MAFIA' && (team.mafiaKillTurnPlayerId === playerId || aliveMafia <= 1),
       mafiaKillTurnPlayerId: reqPlayer?.role === 'MAFIA' ? team.mafiaKillTurnPlayerId : null,
       investigatorResult: reqPlayer?.role === 'INVESTIGATOR' && !hideRole ? team.investigatorResult : null,
       round1Answers:

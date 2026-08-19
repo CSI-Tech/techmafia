@@ -30,7 +30,7 @@ export interface WordPair {
 
 export function loadRound1Questions(): QuestionSet[] {
   try {
-    const filePath = path.join(process.cwd(), 'data', 'round1Questions.json');
+    const filePath = path.join(process.cwd(), 'data', 'final_questions.json');
     const data = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(data).sets;
   } catch (err) {
